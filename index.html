@@ -31,6 +31,11 @@
     #app .tag-chip .tag-icon { font-size: 18px; }
     #app .tag-chip.active { box-shadow: inset 0 0 0 1.5px currentColor; }
     #app .pill { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 10px; border: 1px solid #E8DCC8; background: #FCFDFA; width: 100%; text-align: left; font-size: 13.5px; margin-bottom: 8px; }
+    #app .today-item { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid #F1ECE0; font-size: 13.5px; }
+    #app .today-item:last-child { border-bottom: none; }
+    #app .today-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    #app .today-item .txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #app .today-item .time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #8A7E70; flex-shrink: 0; }
     #app .metric { background: #F7F2EA; border-radius: 10px; padding: 10px 12px; }
     #app .metric-label { font-size: 11px; color: #8A7E70; margin: 0 0 4px; }
     #app .metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; margin: 0; color: #1E4D4A; }
@@ -71,6 +76,12 @@
     <p id="date-banner" style="font-size:12px; color:#D97B4F; margin:8px 0 0; display:none;"></p>
     <div id="tag-row" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:14px;"></div>
     <div id="status" class="status info" style="display:none;"></div>
+  </div>
+
+  <div class="card" id="today-card" style="display:none;">
+    <h2>Deine heutigen guten Entscheidungen</h2>
+    <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;" id="today-count-label"></p>
+    <div id="today-list"></div>
   </div>
 
   <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
@@ -601,7 +612,38 @@
       lastPreview.textContent = "Zuletzt: \u201e" + (lastDecision ? lastDecision.text : "?") + "\u201c";
     }
 
+    renderTodayList(stats);
     renderGallery();
+  }
+
+  function renderTodayList(stats) {
+    var isoToday = todayISO();
+    var todayEntries = state.log.filter(function (l) { return l.date === isoToday; }).slice().reverse();
+    var card = document.getElementById("today-card");
+    var list = document.getElementById("today-list");
+    var countLabel = document.getElementById("today-count-label");
+
+    if (todayEntries.length === 0) {
+      card.style.display = "none";
+      return;
+    }
+    card.style.display = "block";
+    countLabel.textContent = todayEntries.length === 1 ? "1 Eintrag heute" : todayEntries.length + " Einträge heute";
+    list.innerHTML = "";
+
+    todayEntries.forEach(function (entry) {
+      var decision = state.decisions.find(function (d) { return d.id === entry.decisionId; });
+      var tag = TAG_MAP[entry.tag];
+      var row = document.createElement("div");
+      row.className = "today-item";
+      var time = new Date(entry.timestamp).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      row.innerHTML =
+        '<span class="dot" style="background:' + (tag ? tag.color : "#E8DCC8") + ';"></span>' +
+        '<span class="txt">' + (tag ? tag.icon + " " : "") + escapeHtml(decision ? decision.text : "?") + '</span>' +
+        (entry.photoId ? '<span title="Mit Foto">📷</span>' : "") +
+        '<span class="time">' + time + '</span>';
+      list.appendChild(row);
+    });
   }
 
   function renderGallery() {
