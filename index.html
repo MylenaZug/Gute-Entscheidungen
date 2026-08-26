@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Gute Entscheidungen</title>
+<meta name="description" content="Erfasse, verfolge und werte deine guten Entscheidungen aus." />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1E4D4A" />
+<link rel="icon" href="icon-192.png" type="image/png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Entscheidungen" />
+<style>
+  html, body { margin: 0; padding: 0; background: #F7F2EA; }
+</style>
+</head>
+<body>
+<div id="app" style="font-family: 'Work Sans', -apple-system, sans-serif; max-width: 640px; margin: 0 auto; padding: 1.5rem 1.25rem; color: #2B2B26;">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+    #app * { box-sizing: border-box; }
+    #app .card { background: #fff; border: 1px solid #E8DCC8; border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    #app h1 { font-family: 'Fraunces', Georgia, serif; font-size: 24px; margin: 0 0 4px; color: #1E4D4A; }
+    #app h2 { font-family: 'Fraunces', Georgia, serif; font-size: 17px; margin: 0 0 4px; color: #1E4D4A; }
+    #app input[type=text] { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #E8DCC8; font-size: 14px; font-family: inherit; background: #FCFDFA; }
+    #app button { cursor: pointer; font-family: inherit; }
+    #app .tag-chip { border: 1.5px solid #E8DCC8; border-radius: 12px; padding: 10px 8px; font-size: 12px; font-weight: 500; background: #fff; color: #4A453D; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; line-height: 1.25; }
+    #app .tag-chip .tag-icon { font-size: 18px; }
+    #app .tag-chip.active { box-shadow: inset 0 0 0 1.5px currentColor; }
+    #app .pill { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 10px; border: 1px solid #E8DCC8; background: #FCFDFA; width: 100%; text-align: left; font-size: 13.5px; margin-bottom: 8px; }
+    #app .metric { background: #F7F2EA; border-radius: 10px; padding: 10px 12px; }
+    #app .metric-label { font-size: 11px; color: #8A7E70; margin: 0 0 4px; }
+    #app .metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; margin: 0; color: #1E4D4A; }
+    #app .status { font-size: 12px; margin-top: 10px; padding: 6px 10px; border-radius: 8px; }
+    #app .status.ok { background: #E1F5EE; color: #085041; }
+    #app .status.err { background: #FCEBEB; color: #791F1F; }
+    #app .status.info { background: #F7F2EA; color: #8A7E70; }
+  </style>
+
+  <div class="card" style="display:flex; gap:16px; align-items:center;">
+    <div id="ring" style="flex-shrink:0;"></div>
+    <div style="flex:1; min-width:0;">
+      <p style="font-size:12px; color:#D97B4F; font-family:'IBM Plex Mono',monospace; margin:0 0 6px; text-transform:uppercase;" id="eyebrow"></p>
+      <h1 id="greeting"></h1>
+      <p style="font-size:14px; color:#8A7E70; margin:6px 0 0;">Herzlichen Glückwunsch zu deiner guten Entscheidung — welche war es?</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <label style="font-size:12px; color:#8A7E70; font-weight:500; display:block; margin-bottom:6px;">Deine Entscheidung</label>
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="decision-input" placeholder="z. B. Einen Spaziergang statt Sofa gewählt" />
+      <button id="photo-btn" type="button" title="Foto hinzufügen" style="background:#fff; border:1px solid #E8DCC8; border-radius:10px; padding:0 14px; font-size:16px; flex-shrink:0;">📷</button>
+      <input type="file" id="photo-input" accept="image/*" style="display:none;" />
+      <button id="save-btn" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:0 18px; font-size:14px; font-weight:500; min-width:96px;">Speichern</button>
+    </div>
+    <div id="photo-preview" style="display:none; align-items:center; gap:10px; margin-top:10px;">
+      <img id="photo-preview-img" style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid #E8DCC8;" />
+      <span style="font-size:12px; color:#8A7E70;">Foto wird mit gespeichert</span>
+      <button type="button" id="photo-remove-btn" style="background:none; border:none; color:#791F1F; font-size:12px; text-decoration:underline; padding:0;">Entfernen</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+      <label for="date-input" style="font-size:12px; color:#8A7E70;">Für:</label>
+      <input type="date" id="date-input" style="border:1px solid #E8DCC8; border-radius:8px; padding:5px 8px; font-size:12.5px; font-family:inherit; background:#FCFDFA; color:#2B2B26;" />
+      <button type="button" id="yesterday-btn" style="background:#fff; border:1px solid #E8DCC8; border-radius:8px; padding:5px 10px; font-size:12px; color:#8A7E70;">Gestern</button>
+      <button type="button" id="today-btn" style="background:#fff; border:1px solid #E8DCC8; border-radius:8px; padding:5px 10px; font-size:12px; color:#8A7E70;">Heute</button>
+    </div>
+    <p id="date-banner" style="font-size:12px; color:#D97B4F; margin:8px 0 0; display:none;"></p>
+    <div id="tag-row" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:14px;"></div>
+    <div id="status" class="status info" style="display:none;"></div>
+  </div>
+
+  <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h2 style="font-size:14px; margin:0 0 2px;">Letzten Eintrag löschen</h2>
+      <p style="font-size:12px; color:#8A7E70; margin:0;" id="last-entry-preview">Noch kein Eintrag vorhanden.</p>
+    </div>
+    <button id="reset-btn" style="background:#fff; color:#791F1F; border:1px solid #F09595; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:500; flex-shrink:0;">Letzten löschen</button>
+  </div>
+
+  <div class="card" id="top10-card" style="display:none;">
+    <h2>Deine häufigsten guten Entscheidungen</h2>
+    <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;">Ein Klick zählt sie erneut (für das oben gewählte Datum).</p>
+    <div id="top10-list"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <h2>Auswertung</h2>
+      <div style="display:flex; background:#F7F2EA; border-radius:10px; padding:3px;">
+        <button id="view-heute" style="border:none; background:#fff; padding:6px 12px; font-size:12.5px; font-weight:500; border-radius:8px;">Heute</button>
+        <button id="view-woche" style="border:none; background:transparent; padding:6px 12px; font-size:12.5px; font-weight:500; border-radius:8px; color:#8A7E70;">Diese Woche</button>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px;">
+      <div class="metric"><p class="metric-label" id="metric-label-1">Heute</p><p class="metric-value" id="metric-1">0</p></div>
+      <div class="metric"><p class="metric-label">Vorwoche (bisher vergleichbar)</p><p class="metric-value" id="metric-2">0</p></div>
+      <div class="metric"><p class="metric-label" id="metric-label-3">Ø pro Tag</p><p class="metric-value" id="metric-3">—</p></div>
+    </div>
+    <p style="font-size:12px; color:#8A7E70; font-weight:500; margin:0 0 10px;">Diese Woche im Verlauf</p>
+    <div id="bar-chart" style="display:flex; align-items:flex-end; gap:10px; height:110px; margin-bottom:22px;"></div>
+    <p style="font-size:12px; color:#8A7E70; font-weight:500; margin:0 0 10px;">Verteilung nach Kategorie (gesamt)</p>
+    <div id="tag-stats"></div>
+    <p id="empty-state" style="font-size:13px; color:#8A7E70; text-align:center; padding:12px 0 0; margin:0; display:none;"></p>
+  </div>
+
+  <div class="card" id="gallery-card" style="display:none;">
+    <h2>Fotogalerie deiner guten Entscheidungen</h2>
+    <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;">Tippe auf ein Foto für die Details.</p>
+    <div id="gallery-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:8px;"></div>
+  </div>
+
+  <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h2 style="font-size:14px; margin:0 0 2px;">Daten sichern / übertragen</h2>
+      <p style="font-size:12px; color:#8A7E70; margin:0;" id="export-info">Exportiert alle Einträge inkl. Fotos als Datei.</p>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <input type="file" id="import-input" accept="application/json" style="display:none;" />
+      <button id="import-btn" type="button" style="background:#fff; color:#1E4D4A; border:1px solid #E8DCC8; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:500;">Importieren</button>
+      <button id="export-btn" type="button" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:500;">Exportieren</button>
+    </div>
+  </div>
+
+  <div id="lightbox" style="display:none; position:fixed; inset:0; background:rgba(22,36,29,0.85); z-index:1000; align-items:center; justify-content:center; padding:24px;">
+    <div style="max-width:420px; width:100%; background:#fff; border-radius:16px; overflow:hidden;">
+      <img id="lightbox-img" style="width:100%; max-height:340px; object-fit:cover; display:block;" />
+      <div style="padding:16px;">
+        <p id="lightbox-text" style="font-family:'Fraunces',Georgia,serif; font-size:16px; color:#1E4D4A; margin:0 0 6px;"></p>
+        <p id="lightbox-meta" style="font-size:12px; color:#8A7E70; margin:0 0 14px;"></p>
+        <button id="lightbox-close" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:13px; width:100%;">Schließen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TAGS = [
+    { id: "koerper", label: "Gesundheit gestärkt", icon: "💪", color: "#2D5942" },
+    { id: "geld", label: "Geld gespart", icon: "💰", color: "#D97B4F" },
+    { id: "planet", label: "Planet geschont", icon: "🌍", color: "#3B8C6E" },
+    { id: "freude", label: "Freude bereitet", icon: "😊", color: "#F0674A" },
+    { id: "beziehung", label: "Beziehung gestärkt", icon: "🤝", color: "#B0578D" },
+    { id: "kreativ", label: "Kreativität gelebt", icon: "🎨", color: "#3F9C8F" },
+    { id: "aufgeraeumt", label: "Ordnung geschaffen", icon: "🧺", color: "#8C6E54" },
+    { id: "metime", label: "Zeit für mich genommen", icon: "🌿", color: "#7A6FD1" },
+    { id: "abenteuer", label: "Neues gewagt", icon: "🧭", color: "#2E86AB" }
+  ];
+  var TAG_MAP = {};
+  TAGS.forEach(function (t) { TAG_MAP[t.id] = t; });
+  var STORAGE_KEY = "gute-entscheidungen-data";
+
+  var state = { decisions: [], log: [], selectedTag: TAGS[0].id, view: "heute", selectedDate: null, pendingPhoto: null, photoCache: {} };
+
+  function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+  function todayISO(d) {
+    d = d || new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+  function startOfWeek(d) {
+    var date = new Date(d);
+    var day = (date.getDay() + 6) % 7;
+    date.setDate(date.getDate() - day);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+  function addDays(d, n) { var date = new Date(d); date.setDate(date.getDate() + n); return date; }
+
+  function setStatus(msg, type) {
+    var el = document.getElementById("status");
+    el.style.display = "block";
+    el.className = "status " + type;
+    el.textContent = msg;
+  }
+
+  function deleteLogEntry(entryId) {
+    var idx = state.log.findIndex(function (l) { return l.id === entryId; });
+    if (idx === -1) return null;
+    var entry = state.log[idx];
+    state.log.splice(idx, 1);
+
+    var decision = state.decisions.find(function (d) { return d.id === entry.decisionId; });
+    if (decision) {
+      if (decision.count <= 1) {
+        state.decisions = state.decisions.filter(function (d) { return d.id !== entry.decisionId; });
+      } else {
+        decision.count -= 1;
+        var remaining = state.log.filter(function (l) { return l.decisionId === decision.id; });
+        decision.lastUsed = remaining.length > 0 ? remaining[remaining.length - 1].date : decision.lastUsed;
+      }
+    }
+    return { entry: entry, decision: decision };
+  }
+
+  // --- Speicher-Abstraktion: nutzt window.storage innerhalb von Claude,
+  // fällt außerhalb (echte PWA) automatisch auf IndexedDB zurück ---
+  var Store = (function () {
+    var dbPromise = null;
+
+    function hasClaudeStorage() {
+      return typeof window.storage !== "undefined" && window.storage && typeof window.storage.get === "function";
+    }
+
+    function openDb() {
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise(function (resolve, reject) {
+        var req = indexedDB.open("gute-entscheidungen-db", 1);
+        req.onupgradeneeded = function () {
+          req.result.createObjectStore("kv", { keyPath: "key" });
+        };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+      });
+      return dbPromise;
+    }
+
+    async function idbGet(key) {
+      var db = await openDb();
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction("kv", "readonly");
+        var req = tx.objectStore("kv").get(key);
+        req.onsuccess = function () {
+          resolve(req.result ? { key: key, value: req.result.value, shared: false } : null);
+        };
+        req.onerror = function () { reject(req.error); };
+      });
+    }
+
+    async function idbSet(key, value) {
+      var db = await openDb();
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction("kv", "readwrite");
+        tx.objectStore("kv").put({ key: key, value: value });
+        tx.oncomplete = function () { resolve({ key: key, value: value, shared: false }); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    }
+
+    async function idbDelete(key) {
+      var db = await openDb();
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction("kv", "readwrite");
+        tx.objectStore("kv").delete(key);
+        tx.oncomplete = function () { resolve({ key: key, deleted: true, shared: false }); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    }
+
+    return {
+      mode: hasClaudeStorage() ? "claude" : "indexeddb",
+      available: true,
+      async get(key) {
+        if (hasClaudeStorage()) return window.storage.get(key, false);
+        return idbGet(key);
+      },
+      async set(key, value) {
+        if (hasClaudeStorage()) return window.storage.set(key, value, false);
+        return idbSet(key, value);
+      },
+      async delete(key) {
+        if (hasClaudeStorage()) return window.storage.delete(key, false);
+        return idbDelete(key);
+      }
+    };
+  })();
+
+  function hasStorage() {
+    return true; // Store kümmert sich selbst um das passende Backend
+  }
+
+  function compressImage(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error("Datei konnte nicht gelesen werden.")); };
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error("Bild konnte nicht geladen werden.")); };
+        img.onload = function () {
+          var maxDim = 900;
+          var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.72));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function savePhoto(photoId, dataUrl) {
+    if (!hasStorage()) return false;
+    try {
+      var result = await Store.set("photo:" + photoId, dataUrl);
+      return !!result;
+    } catch (e) {
+      setStatus("Foto konnte nicht gespeichert werden: " + e.message, "err");
+      return false;
+    }
+  }
+
+  async function loadPhoto(photoId) {
+    if (state.photoCache[photoId]) return state.photoCache[photoId];
+    if (!hasStorage()) return null;
+    try {
+      var res = await Store.get("photo:" + photoId);
+      if (res && res.value) {
+        state.photoCache[photoId] = res.value;
+        return res.value;
+      }
+    } catch (e) {
+      // Foto nicht gefunden
+    }
+    return null;
+  }
+
+  async function load() {
+    document.getElementById("date-input").value = todayISO();
+    document.getElementById("date-input").max = todayISO();
+    if (!hasStorage()) {
+      setStatus("Speicher-Funktion ist in dieser Ansicht nicht verfügbar. Öffne die App direkt im Chat-Vorschaufenster, damit Einträge gespeichert werden.", "err");
+      render();
+      return;
+    }
+    try {
+      var res = await Store.get(STORAGE_KEY);
+      if (res && res.value) {
+        var parsed = JSON.parse(res.value);
+        state.decisions = parsed.decisions || [];
+        state.log = parsed.log || [];
+      }
+    } catch (e) {
+      // Erststart, noch nichts gespeichert
+    }
+    render();
+  }
+
+  async function persist() {
+    if (!hasStorage()) {
+      setStatus("Nicht gespeichert: Speicher-Funktion nicht verfügbar in dieser Ansicht.", "err");
+      return;
+    }
+    try {
+      var result = await Store.set(STORAGE_KEY, JSON.stringify({ decisions: state.decisions, log: state.log }));
+      if (result) {
+        setStatus("Gespeichert.", "ok");
+      } else {
+        setStatus("Speichern fehlgeschlagen (keine Bestätigung erhalten). Bitte erneut versuchen.", "err");
+      }
+    } catch (e) {
+      setStatus("Fehler beim Speichern: " + e.message, "err");
+    }
+  }
+
+  async function recordDecision(text, tag, existingId, photoDataUrl) {
+    var iso = state.selectedDate || todayISO();
+    var now = new Date();
+    var decisionId = existingId;
+    var finalText = text && text.trim() ? text.trim() : "📷 Foto";
+
+    var photoId = null;
+    if (photoDataUrl) {
+      photoId = uid();
+      state.photoCache[photoId] = photoDataUrl; // sofort lokal verfügbar für die Anzeige
+      var saved = await savePhoto(photoId, photoDataUrl);
+      if (!saved) {
+        setStatus("Foto konnte nicht dauerhaft gespeichert werden — bitte nochmal versuchen, ohne die Ansicht zu schließen.", "err");
+        return false;
+      }
+    }
+
+    if (existingId) {
+      state.decisions = state.decisions.map(function (d) {
+        return d.id === existingId ? Object.assign({}, d, { count: d.count + 1, lastUsed: iso }) : d;
+      });
+    } else {
+      decisionId = uid();
+      state.decisions.push({ id: decisionId, text: finalText, tag: tag, count: 1, lastUsed: iso });
+    }
+
+    var logEntry = { id: uid(), decisionId: decisionId, tag: tag, date: iso, timestamp: now.toISOString() };
+    if (photoId) logEntry.photoId = photoId;
+    state.log.push(logEntry);
+
+    render();
+    await persist();
+    return true;
+  }
+
+  function computeStats() {
+    var today = new Date();
+    var isoToday = todayISO(today);
+    var weekStart = startOfWeek(today);
+    var weekStartISO = todayISO(weekStart);
+    var lastWeekStart = addDays(weekStart, -7);
+    var lastWeekStartISO = todayISO(lastWeekStart);
+    var lastWeekEndISO = todayISO(addDays(weekStart, -1));
+
+    var todayEntries = state.log.filter(function (l) { return l.date === isoToday; });
+    var weekEntries = state.log.filter(function (l) { return l.date >= weekStartISO && l.date <= isoToday; });
+    var lastWeekEntries = state.log.filter(function (l) { return l.date >= lastWeekStartISO && l.date <= lastWeekEndISO; });
+
+    function byTag(entries) {
+      var map = {};
+      TAGS.forEach(function (t) { map[t.id] = 0; });
+      entries.forEach(function (e) { map[e.tag] = (map[e.tag] || 0) + 1; });
+      return map;
+    }
+
+    var dayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+    var byDay = dayLabels.map(function (label, i) {
+      var d = addDays(weekStart, i);
+      var iso = todayISO(d);
+      var dayEntries = state.log.filter(function (l) { return l.date === iso; });
+      var tagCounts = {};
+      TAGS.forEach(function (t) { tagCounts[t.id] = 0; });
+      dayEntries.forEach(function (e) { tagCounts[e.tag] = (tagCounts[e.tag] || 0) + 1; });
+      return { label: label, count: dayEntries.length, tagCounts: tagCounts, isToday: iso === isoToday, isFuture: d > today };
+    });
+
+    var weekTotal = weekEntries.length;
+    var lastWeekTotal = lastWeekEntries.length;
+
+    var allDates = state.log.map(function (l) { return l.date; }).sort();
+    var avgPerDay = null, avgPerWeek = null;
+    if (allDates.length > 0) {
+      var firstDate = new Date(allDates[0] + "T00:00:00");
+      var daysSinceStart = Math.floor((today - firstDate) / 86400000) + 1;
+      avgPerDay = state.log.length / daysSinceStart;
+      var weeksSinceStart = Math.max(1, daysSinceStart / 7);
+      avgPerWeek = state.log.length / weeksSinceStart;
+    }
+
+    return {
+      todayCount: todayEntries.length, weekTotal: weekTotal, lastWeekTotal: lastWeekTotal,
+      avgPerDay: avgPerDay, avgPerWeek: avgPerWeek, totalCount: state.log.length, byTagToday: byTag(todayEntries),
+      byTagWeek: byTag(weekEntries), byTagAll: byTag(state.log), byDay: byDay
+    };
+  }
+
+  function greetingText() {
+    var h = new Date().getHours();
+    if (h < 11) return "Guten Morgen! Schön, dass du schon an eine gute Entscheidung denkst.";
+    if (h < 17) return "Hey! Zeit für eine weitere gute Entscheidung.";
+    if (h < 22) return "Guten Abend! Was hast du dir heute Gutes getan?";
+    return "Noch wach und trotzdem an guten Entscheidungen dran — stark.";
+  }
+
+  function renderRing(count) {
+    var total = 8, filled = Math.min(count, total), radius = 26, center = 32, svg = "";
+    for (var i = 0; i < total; i++) {
+      var angle = (i / total) * 2 * Math.PI - Math.PI / 2;
+      var cx = center + radius * Math.cos(angle), cy = center + radius * Math.sin(angle);
+      var isFilled = i < filled;
+      var color = isFilled ? "hsl(" + Math.round((i / total) * 360) + ", 70%, 55%)" : "none";
+      svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (isFilled ? 5 : 3.5) + '" fill="' + color + '" stroke="' + (isFilled ? "none" : "#E8DCC8") + '" stroke-width="1.5"/>';
+    }
+    svg += '<text x="' + center + '" y="' + (center + 5) + '" text-anchor="middle" font-size="16" font-family="IBM Plex Mono, monospace" fill="#1E4D4A">' + count + '</text>';
+    return '<svg width="64" height="64" viewBox="0 0 64 64">' + svg + '</svg>';
+  }
+
+  function render() {
+    var stats = computeStats();
+    document.getElementById("greeting").textContent = greetingText();
+    document.getElementById("eyebrow").textContent =
+      (stats.totalCount === 0 ? "Dein erster Eintrag wartet" : (stats.totalCount + " gute Entscheidungen insgesamt")) +
+      "  ·  Speicher: " + (Store.mode === "claude" ? "Claude" : "IndexedDB (lokal)");
+    document.getElementById("ring").innerHTML = renderRing(stats.todayCount);
+
+    var tagRow = document.getElementById("tag-row");
+    tagRow.innerHTML = "";
+    TAGS.forEach(function (t) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tag-chip" + (state.selectedTag === t.id ? " active" : "");
+      btn.innerHTML = '<span class="tag-icon">' + t.icon + '</span><span>' + t.label + '</span>';
+      btn.style.borderColor = state.selectedTag === t.id ? t.color : "#E8DCC8";
+      btn.style.background = state.selectedTag === t.id ? t.color + "1A" : "#fff";
+      btn.style.color = state.selectedTag === t.id ? t.color : "#4A453D";
+      btn.addEventListener("click", function () { state.selectedTag = t.id; render(); });
+      tagRow.appendChild(btn);
+    });
+
+    var sortedDecisions = state.decisions.slice().sort(function (a, b) { return b.count - a.count; });
+    var topTen = sortedDecisions.slice(0, 10);
+    var top10Card = document.getElementById("top10-card");
+    var top10List = document.getElementById("top10-list");
+    top10List.innerHTML = "";
+    if (topTen.length > 0) {
+      top10Card.style.display = "block";
+      topTen.forEach(function (d) {
+        var tag = TAG_MAP[d.tag];
+        var btn = document.createElement("button");
+        btn.className = "pill";
+        btn.style.borderColor = tag ? tag.color : "#E8DCC8";
+        btn.innerHTML = '<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(d.text) + '</span><span style="font-family:\'IBM Plex Mono\',monospace; font-size:12px; color:#8A7E70;">' + d.count + '×</span>';
+        btn.addEventListener("click", function () { recordDecision(d.text, d.tag, d.id); });
+        top10List.appendChild(btn);
+      });
+    } else {
+      top10Card.style.display = "none";
+    }
+
+    var activeByTag = state.view === "heute" ? stats.byTagToday : stats.byTagWeek;
+    var activeTotal = state.view === "heute" ? stats.todayCount : stats.weekTotal;
+
+    document.getElementById("metric-label-1").textContent = state.view === "heute" ? "Heute" : "Diese Woche";
+    document.getElementById("metric-1").textContent = activeTotal;
+    document.getElementById("metric-2").textContent = stats.lastWeekTotal;
+
+    var avg = state.view === "heute" ? stats.avgPerDay : stats.avgPerWeek;
+    var current = state.view === "heute" ? stats.todayCount : stats.weekTotal;
+    document.getElementById("metric-label-3").textContent = state.view === "heute" ? "Ø pro Tag" : "Ø pro Woche";
+    var m3 = document.getElementById("metric-3");
+    if (avg === null) {
+      m3.textContent = "—";
+      m3.style.color = "#8A7E70";
+    } else {
+      m3.textContent = avg.toFixed(1).replace(".", ",");
+      m3.style.color = current >= avg ? "#2D5942" : "#F0674A";
+    }
+
+    var maxDayCount = Math.max(1, Math.max.apply(null, stats.byDay.map(function (d) { return d.count; })));
+    var barChart = document.getElementById("bar-chart");
+    barChart.innerHTML = "";
+    stats.byDay.forEach(function (d) {
+      var col = document.createElement("div");
+      col.style.cssText = "flex:1; display:flex; flex-direction:column; align-items:center; height:100%;";
+      var totalHeight = (d.isFuture || d.count === 0) ? 0 : Math.max(4, (d.count / maxDayCount) * 100);
+      var segmentsHtml = "";
+      if (totalHeight > 0) {
+        TAGS.forEach(function (t) {
+          var tCount = d.tagCounts[t.id] || 0;
+          if (tCount === 0) return;
+          var segHeight = (tCount / d.count) * totalHeight;
+          segmentsHtml += '<div style="width:100%; height:' + segHeight + '%; background:' + t.color + ';" title="' + t.label + ': ' + tCount + '"></div>';
+        });
+      }
+      col.innerHTML =
+        '<div style="flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center;">' +
+          '<div style="width:60%; height:' + totalHeight + '%; display:flex; flex-direction:column-reverse; border-radius:4px 4px 0 0; overflow:hidden;">' + segmentsHtml + '</div>' +
+        '</div>' +
+        '<span style="font-size:11px; color:' + (d.isToday ? "#1E4D4A" : "#8A7E70") + '; font-weight:' + (d.isToday ? "600" : "400") + '; margin-top:6px;">' + d.label + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace; font-size:10px;">' + (d.isFuture ? "" : d.count) + '</span>';
+      barChart.appendChild(col);
+    });
+
+    var tagStats = document.getElementById("tag-stats");
+    tagStats.innerHTML = "";
+    TAGS.forEach(function (t) {
+      var count = stats.byTagAll[t.id] || 0;
+      var pct = stats.totalCount > 0 ? (count / stats.totalCount) * 100 : 0;
+      var row = document.createElement("div");
+      row.style.cssText = "display:flex; align-items:center; gap:8px; margin-bottom:9px;";
+      row.innerHTML =
+        '<span style="font-size:12.5px; width:160px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + t.icon + ' ' + t.label + '</span>' +
+        '<div style="flex:1; height:6px; border-radius:3px; background:#F7F2EA; overflow:hidden;"><div style="height:100%; border-radius:3px; width:' + pct + '%; background:' + t.color + ';"></div></div>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace; font-size:12px; color:#8A7E70; width:18px; text-align:right;">' + count + '</span>';
+      tagStats.appendChild(row);
+    });
+
+    var emptyState = document.getElementById("empty-state");
+    if (activeTotal === 0) {
+      emptyState.style.display = "block";
+      emptyState.textContent = state.view === "heute" ? "Noch keine Entscheidung heute — leg los, wenn du bereit bist." : "Diese Woche ist noch leer — jede Entscheidung zählt.";
+    } else {
+      emptyState.style.display = "none";
+    }
+
+    document.getElementById("view-heute").style.background = state.view === "heute" ? "#fff" : "transparent";
+    document.getElementById("view-heute").style.color = state.view === "heute" ? "#1E4D4A" : "#8A7E70";
+    document.getElementById("view-woche").style.background = state.view === "woche" ? "#fff" : "transparent";
+    document.getElementById("view-woche").style.color = state.view === "woche" ? "#1E4D4A" : "#8A7E70";
+
+    var dateBanner = document.getElementById("date-banner");
+    var iso = state.selectedDate || todayISO();
+    if (iso !== todayISO()) {
+      var d = new Date(iso + "T00:00:00");
+      dateBanner.style.display = "block";
+      dateBanner.textContent = "Du fügst gerade Einträge für " + d.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "2-digit" }) + " hinzu.";
+    } else {
+      dateBanner.style.display = "none";
+    }
+
+    var lastPreview = document.getElementById("last-entry-preview");
+    if (state.log.length === 0) {
+      lastPreview.textContent = "Noch kein Eintrag vorhanden.";
+    } else {
+      var lastEntry = state.log[state.log.length - 1];
+      var lastDecision = state.decisions.find(function (d) { return d.id === lastEntry.decisionId; });
+      lastPreview.textContent = "Zuletzt: \u201e" + (lastDecision ? lastDecision.text : "?") + "\u201c";
+    }
+
+    renderGallery();
+  }
+
+  function renderGallery() {
+    var galleryCard = document.getElementById("gallery-card");
+    var grid = document.getElementById("gallery-grid");
+    var photoEntries = state.log.filter(function (l) { return l.photoId; }).slice().reverse();
+
+    if (photoEntries.length === 0) {
+      galleryCard.style.display = "none";
+      return;
+    }
+    galleryCard.style.display = "block";
+    grid.innerHTML = "";
+
+    photoEntries.forEach(function (entry) {
+      var decision = state.decisions.find(function (d) { return d.id === entry.decisionId; });
+      var tag = TAG_MAP[entry.tag];
+      var thumb = document.createElement("button");
+      thumb.type = "button";
+      thumb.style.cssText = "padding:0; border:2px solid " + (tag ? tag.color : "#E8DCC8") + "; border-radius:10px; overflow:hidden; aspect-ratio:1/1; background:#F7F2EA; display:block; width:100%;";
+
+      var wrapper = document.createElement("div");
+      wrapper.style.cssText = "position:relative;";
+
+      var cached = state.photoCache[entry.photoId];
+      if (cached) {
+        thumb.innerHTML = '<img src="' + cached + '" style="width:100%; height:100%; object-fit:cover; display:block;" />';
+      } else {
+        thumb.innerHTML = '<span style="font-size:11px; color:#8A7E70;">Lädt …</span>';
+        loadPhoto(entry.photoId).then(function (url) {
+          if (url) {
+            thumb.innerHTML = '<img src="' + url + '" style="width:100%; height:100%; object-fit:cover; display:block;" />';
+          } else {
+            thumb.innerHTML = '<span style="font-size:10px; color:#8A7E70; padding:4px; text-align:center;">Nicht gefunden</span>';
+            var delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.title = "Diesen fehlerhaften Eintrag löschen";
+            delBtn.textContent = "✕";
+            delBtn.style.cssText = "position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; border:none; background:#791F1F; color:#fff; font-size:11px; line-height:1; cursor:pointer;";
+            delBtn.addEventListener("click", function (ev) {
+              ev.stopPropagation();
+              var result = deleteLogEntry(entry.id);
+              render();
+              persist();
+              setStatus("Fehlerhafter Foto-Eintrag gelöscht.", "ok");
+            });
+            wrapper.appendChild(delBtn);
+          }
+        });
+      }
+
+      thumb.addEventListener("click", async function () {
+        var url = state.photoCache[entry.photoId] || (await loadPhoto(entry.photoId));
+        if (!url) return;
+        document.getElementById("lightbox-img").src = url;
+        document.getElementById("lightbox-text").textContent = decision ? decision.text : "Foto";
+        var d = new Date(entry.date + "T00:00:00");
+        document.getElementById("lightbox-meta").textContent =
+          (tag ? tag.label : "") + " · " + d.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+        document.getElementById("lightbox").style.display = "flex";
+      });
+
+      wrapper.appendChild(thumb);
+      grid.appendChild(wrapper);
+    });
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  document.getElementById("save-btn").addEventListener("click", async function () {
+    var input = document.getElementById("decision-input");
+    var text = input.value.trim();
+    if (!text && !state.pendingPhoto) {
+      setStatus("Bitte etwas eintippen oder ein Foto hinzufügen.", "info");
+      return;
+    }
+    var btn = this;
+    btn.disabled = true;
+    var ok = await recordDecision(text, state.selectedTag, null, state.pendingPhoto);
+    btn.disabled = false;
+    if (ok) {
+      input.value = "";
+      state.pendingPhoto = null;
+      document.getElementById("photo-preview").style.display = "none";
+      document.getElementById("photo-input").value = "";
+    }
+  });
+  document.getElementById("photo-btn").addEventListener("click", function () {
+    document.getElementById("photo-input").click();
+  });
+  document.getElementById("photo-input").addEventListener("change", async function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setStatus("Foto wird verarbeitet …", "info");
+    try {
+      var dataUrl = await compressImage(file);
+      state.pendingPhoto = dataUrl;
+      document.getElementById("photo-preview-img").src = dataUrl;
+      document.getElementById("photo-preview").style.display = "flex";
+      setStatus("Foto bereit — jetzt speichern.", "info");
+    } catch (err) {
+      setStatus("Foto konnte nicht verarbeitet werden: " + err.message, "err");
+    }
+  });
+  document.getElementById("photo-remove-btn").addEventListener("click", function () {
+    state.pendingPhoto = null;
+    document.getElementById("photo-preview").style.display = "none";
+    document.getElementById("photo-input").value = "";
+  });
+  document.getElementById("decision-input").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("save-btn").click(); }
+  });
+  document.getElementById("view-heute").addEventListener("click", function () { state.view = "heute"; render(); });
+  document.getElementById("view-woche").addEventListener("click", function () { state.view = "woche"; render(); });
+  document.getElementById("reset-btn").addEventListener("click", function () {
+    if (state.log.length === 0) {
+      setStatus("Es gibt noch keinen Eintrag zum Löschen.", "info");
+      return;
+    }
+    var lastEntry = state.log[state.log.length - 1];
+    var result = deleteLogEntry(lastEntry.id);
+    render();
+    persist();
+    setStatus("Letzter Eintrag gelöscht: \u201e" + (result && result.decision ? result.decision.text : lastEntry.tag) + "\u201c.", "ok");
+  });
+
+  document.getElementById("date-input").addEventListener("change", function (e) {
+    state.selectedDate = e.target.value || todayISO();
+    render();
+  });
+  document.getElementById("yesterday-btn").addEventListener("click", function () {
+    var y = addDays(new Date(), -1);
+    state.selectedDate = todayISO(y);
+    document.getElementById("date-input").value = state.selectedDate;
+    render();
+  });
+  document.getElementById("today-btn").addEventListener("click", function () {
+    state.selectedDate = todayISO();
+    document.getElementById("date-input").value = state.selectedDate;
+    render();
+  });
+
+  document.getElementById("lightbox-close").addEventListener("click", function () {
+    document.getElementById("lightbox").style.display = "none";
+  });
+  document.getElementById("lightbox").addEventListener("click", function (e) {
+    if (e.target.id === "lightbox") e.target.style.display = "none";
+  });
+
+  document.getElementById("export-btn").addEventListener("click", async function () {
+    var btn = this;
+    var originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Sammle Daten …";
+    try {
+      var photoIds = state.log.filter(function (l) { return l.photoId; }).map(function (l) { return l.photoId; });
+      var photos = {};
+      for (var i = 0; i < photoIds.length; i++) {
+        var pid = photoIds[i];
+        var url = state.photoCache[pid] || (await loadPhoto(pid));
+        if (url) photos[pid] = url;
+      }
+
+      var exportData = {
+        app: "gute-entscheidungen",
+        exportedAt: new Date().toISOString(),
+        version: 1,
+        decisions: state.decisions,
+        log: state.log,
+        photos: photos
+      };
+
+      var blob = new Blob([JSON.stringify(exportData)], { type: "application/json" });
+      var url2 = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url2;
+      a.download = "gute-entscheidungen-export-" + todayISO() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url2); }, 2000);
+
+      setStatus("Export erstellt (" + state.log.length + " Einträge, " + photoIds.length + " Fotos).", "ok");
+    } catch (e) {
+      setStatus("Export fehlgeschlagen: " + e.message, "err");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  });
+
+  document.getElementById("import-btn").addEventListener("click", function () {
+    document.getElementById("import-input").click();
+  });
+
+  document.getElementById("import-input").addEventListener("change", async function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var inputEl = e.target;
+    setStatus("Import wird gelesen …", "info");
+    try {
+      var text = await file.text();
+      var data = JSON.parse(text);
+      if (!data || !Array.isArray(data.decisions) || !Array.isArray(data.log)) {
+        throw new Error("Datei hat kein gültiges Format.");
+      }
+
+      var existingDecisionIds = {};
+      state.decisions.forEach(function (d) { existingDecisionIds[d.id] = true; });
+      var existingLogIds = {};
+      state.log.forEach(function (l) { existingLogIds[l.id] = true; });
+
+      var addedDecisions = 0, addedLog = 0, addedPhotos = 0;
+
+      data.decisions.forEach(function (d) {
+        if (!existingDecisionIds[d.id]) {
+          state.decisions.push(d);
+          existingDecisionIds[d.id] = true;
+          addedDecisions++;
+        } else {
+          var existing = state.decisions.find(function (x) { return x.id === d.id; });
+          if (existing) existing.count = Math.max(existing.count, d.count);
+        }
+      });
+
+      data.log.forEach(function (l) {
+        if (!existingLogIds[l.id]) {
+          state.log.push(l);
+          existingLogIds[l.id] = true;
+          addedLog++;
+        }
+      });
+
+      if (data.photos) {
+        for (var pid in data.photos) {
+          if (!Object.prototype.hasOwnProperty.call(data.photos, pid)) continue;
+          state.photoCache[pid] = data.photos[pid];
+          await savePhoto(pid, data.photos[pid]);
+          addedPhotos++;
+        }
+      }
+
+      render();
+      await persist();
+      setStatus("Import fertig: " + addedDecisions + " neue Entscheidungen, " + addedLog + " neue Verlaufseinträge, " + addedPhotos + " Fotos.", "ok");
+    } catch (err) {
+      setStatus("Import fehlgeschlagen: " + err.message, "err");
+    } finally {
+      inputEl.value = "";
+    }
+  });
+
+  load();
+})();
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("service-worker.js").catch(function (err) {
+        console.warn("Service Worker Registrierung fehlgeschlagen:", err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
