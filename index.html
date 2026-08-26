@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Entscheidungen" />
 <style>
-  html, body { margin: 0; padding: 0; background: #F7F2EA; }
+  html, body { margin: 0; padding: 0; background: #F7F2EA; overflow-x: hidden; }
 </style>
 </head>
 <body>
@@ -21,6 +21,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
     #app * { box-sizing: border-box; }
+    #app { overflow-x: hidden; max-width: 100%; }
     #app .card { background: #fff; border: 1px solid #E8DCC8; border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; }
     #app h1 { font-family: 'Fraunces', Georgia, serif; font-size: 24px; margin: 0 0 4px; color: #1E4D4A; }
     #app h2 { font-family: 'Fraunces', Georgia, serif; font-size: 17px; margin: 0 0 4px; color: #1E4D4A; }
@@ -50,11 +51,11 @@
 
   <div class="card">
     <label style="font-size:12px; color:#8A7E70; font-weight:500; display:block; margin-bottom:6px;">Deine Entscheidung</label>
-    <div style="display:flex; gap:8px;">
-      <input type="text" id="decision-input" placeholder="z. B. Einen Spaziergang statt Sofa gewählt" />
-      <button id="photo-btn" type="button" title="Foto hinzufügen" style="background:#fff; border:1px solid #E8DCC8; border-radius:10px; padding:0 14px; font-size:16px; flex-shrink:0;">📷</button>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <input type="text" id="decision-input" placeholder="z. B. Einen Spaziergang statt Sofa gewählt" style="min-width:140px;" />
+      <button id="photo-btn" type="button" title="Foto hinzufügen" style="background:#fff; border:1px solid #E8DCC8; border-radius:10px; padding:0 14px; font-size:16px; flex-shrink:0; height:40px;">📷</button>
       <input type="file" id="photo-input" accept="image/*" style="display:none;" />
-      <button id="save-btn" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:0 14px; font-size:14px; font-weight:500; flex-shrink:0;">Speichern</button>
+      <button id="save-btn" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:0 14px; font-size:14px; font-weight:500; flex-shrink:0; height:40px; white-space:nowrap;">Speichern</button>
     </div>
     <div id="photo-preview" style="display:none; align-items:center; gap:10px; margin-top:10px;">
       <img id="photo-preview-img" style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid #E8DCC8;" />
