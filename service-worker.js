@@ -3,7 +3,7 @@
 // (siehe Store-Objekt in index.html) — dieser Service Worker cached nur die
 // statischen Dateien, damit die App auch offline startet.
 
-var CACHE_NAME = "gute-entscheidungen-v13";
+var CACHE_NAME = "gute-entscheidungen-v14";
 var ASSETS = [
   "./",
   "./index.html",
