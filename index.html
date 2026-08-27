@@ -36,6 +36,14 @@
     #app .today-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     #app .today-item .txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #app .today-item .time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #8A7E70; flex-shrink: 0; }
+    #app .mantra-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #FCFDFA; border: 1px solid #E8DCC8; font-size: 13px; }
+    #app .mantra-row .mantra-text { flex: 1; }
+    #app .mantra-row .mantra-del { background: none; border: none; color: #8A7E70; font-size: 13px; padding: 2px 4px; flex-shrink: 0; }
+    #app .mantra-move { background: none; border: none; color: #8A7E70; font-size: 9px; padding: 1px 4px; line-height: 1.4; }
+    #app .mantra-move:disabled { opacity: 0.25; }
+    #app .suggestion-item { padding: 10px 12px; font-size: 13.5px; cursor: pointer; border-bottom: 1px solid #F1ECE0; display: flex; align-items: center; gap: 8px; }
+    #app .suggestion-item:last-child { border-bottom: none; }
+    #app .suggestion-item:active { background: #F7F2EA; }
     #app .metric { background: #F7F2EA; border-radius: 10px; padding: 10px 12px; }
     #app .metric-label { font-size: 11px; color: #8A7E70; margin: 0 0 4px; }
     #app .metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; margin: 0; color: #1E4D4A; }
@@ -52,14 +60,36 @@
       <h1 id="greeting"></h1>
       <p style="font-size:14px; color:#8A7E70; margin:6px 0 0;">Herzlichen Glückwunsch zu deiner guten Entscheidung — welche war es?</p>
     </div>
+    <button id="mantra-open-btn" type="button" title="Merksätze" style="background:#fff; border:1px solid #E8DCC8; border-radius:10px; padding:8px 10px; font-size:18px; flex-shrink:0; align-self:flex-start;">💬</button>
+  </div>
+
+  <div id="mantra-overlay" style="display:none; position:fixed; inset:0; background:rgba(22,36,29,0.85); z-index:1000; align-items:flex-end; justify-content:center;">
+    <div style="max-width:480px; width:100%; max-height:80vh; background:#fff; border-radius:20px 20px 0 0; overflow:hidden; display:flex; flex-direction:column;">
+      <div style="padding:20px 20px 0;">
+        <h2 style="margin:0 0 4px;">Merksätze</h2>
+        <p style="font-size:12.5px; color:#8A7E70; margin:0 0 14px;">Kleine Erinnerungen, bevor du dich entscheidest.</p>
+      </div>
+      <div id="mantra-list" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding:0 20px 14px;"></div>
+      <div style="display:flex; gap:8px; padding:14px 20px; border-top:1px solid #F1ECE0;">
+        <input type="text" id="mantra-input" placeholder="Eigenen Merksatz hinzufügen …" style="flex:1; min-width:120px;" />
+        <button id="mantra-add-btn" type="button" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:0 16px; font-size:13px; font-weight:500; flex-shrink:0; height:40px;">Hinzufügen</button>
+      </div>
+      <div style="padding:0 20px 20px;">
+        <button id="mantra-close-btn" type="button" style="width:100%; background:#F7F2EA; color:#1E4D4A; border:none; border-radius:10px; padding:10px; font-size:13px; font-weight:500;">Schließen</button>
+      </div>
+    </div>
   </div>
 
   <div class="card">
     <label style="font-size:12px; color:#8A7E70; font-weight:500; display:block; margin-bottom:6px;">Deine Entscheidung</label>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <input type="text" id="decision-input" placeholder="z. B. Einen Spaziergang statt Sofa gewählt" style="min-width:140px;" />
+      <div style="position:relative; flex:1; min-width:140px;">
+        <input type="text" id="decision-input" placeholder="z. B. Einen Spaziergang statt Sofa gewählt" style="width:100%;" autocomplete="off" />
+        <div id="suggestions" style="display:none; position:absolute; top:44px; left:0; right:0; background:#fff; border:1px solid #E8DCC8; border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,0.08); z-index:50; overflow:hidden;"></div>
+      </div>
       <button id="photo-btn" type="button" title="Foto hinzufügen" style="background:#fff; border:1px solid #E8DCC8; border-radius:10px; padding:0 14px; font-size:16px; flex-shrink:0; height:40px;">📷</button>
       <input type="file" id="photo-input" accept="image/*" style="display:none;" />
+      <input type="file" id="today-photo-input" accept="image/*" style="display:none;" />
       <button id="save-btn" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:0 14px; font-size:14px; font-weight:500; flex-shrink:0; height:40px; white-space:nowrap;">Speichern</button>
     </div>
     <div id="photo-preview" style="display:none; align-items:center; gap:10px; margin-top:10px;">
@@ -93,7 +123,7 @@
   </div>
 
   <div class="card" id="top10-card" style="display:none;">
-    <h2>Deine häufigsten guten Entscheidungen</h2>
+    <h2>Deine 5 häufigsten guten Entscheidungen</h2>
     <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;">Ein Klick zählt sie erneut (für das oben gewählte Datum).</p>
     <div id="top10-list"></div>
   </div>
@@ -136,6 +166,8 @@
     </div>
   </div>
 
+  <p style="text-align:center; font-size:11px; color:#8A7E70; margin:-4px 0 4px;" id="storage-mode-info"></p>
+
   <div id="lightbox" style="display:none; position:fixed; inset:0; background:rgba(22,36,29,0.85); z-index:1000; align-items:center; justify-content:center; padding:24px;">
     <div style="max-width:420px; width:100%; background:#fff; border-radius:16px; overflow:hidden;">
       <img id="lightbox-img" style="width:100%; max-height:340px; object-fit:cover; display:block;" />
@@ -165,7 +197,19 @@
   TAGS.forEach(function (t) { TAG_MAP[t.id] = t; });
   var STORAGE_KEY = "gute-entscheidungen-data";
 
-  var state = { decisions: [], log: [], selectedTag: TAGS[0].id, view: "heute", selectedDate: null, pendingPhoto: null, photoCache: {} };
+  var DEFAULT_MANTRAS = [
+    "Ich habe die Wahl – und ich wähle gut für mich.",
+    "Eine gute Entscheidung fühlt sich morgen noch richtig an.",
+    "Ich bin es wert, gut für mich zu sorgen.",
+    "Klein anfangen zählt auch.",
+    "Ich muss nicht perfekt sein, nur ehrlich mit mir.",
+    "Was würde mein zukünftiges Ich sich wünschen?",
+    "Ich darf Nein sagen, wenn es mir nicht gut tut.",
+    "Gute Gewohnheiten schlagen kurzfristige Lust."
+  ];
+
+  var state = { decisions: [], log: [], mantras: null, selectedTag: TAGS[0].id, view: "heute", selectedDate: null, pendingPhoto: null, photoCache: {} };
+  var pendingPhotoTargetEntryId = null;
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
   function todayISO(d) {
@@ -294,7 +338,7 @@
         var img = new Image();
         img.onerror = function () { reject(new Error("Bild konnte nicht geladen werden.")); };
         img.onload = function () {
-          var maxDim = 900;
+          var maxDim = 700;
           var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
           var canvas = document.createElement("canvas");
           canvas.width = Math.round(img.width * scale);
@@ -349,9 +393,13 @@
         var parsed = JSON.parse(res.value);
         state.decisions = parsed.decisions || [];
         state.log = parsed.log || [];
+        state.mantras = parsed.mantras || null;
       }
     } catch (e) {
       // Erststart, noch nichts gespeichert
+    }
+    if (!state.mantras) {
+      state.mantras = DEFAULT_MANTRAS.map(function (text) { return { id: uid(), text: text }; });
     }
     render();
   }
@@ -362,7 +410,7 @@
       return;
     }
     try {
-      var result = await Store.set(STORAGE_KEY, JSON.stringify({ decisions: state.decisions, log: state.log }));
+      var result = await Store.set(STORAGE_KEY, JSON.stringify({ decisions: state.decisions, log: state.log, mantras: state.mantras }));
       if (result) {
         setStatus("Gespeichert.", "ok");
       } else {
@@ -484,8 +532,9 @@
     var stats = computeStats();
     document.getElementById("greeting").textContent = greetingText();
     document.getElementById("eyebrow").textContent =
-      (stats.totalCount === 0 ? "Dein erster Eintrag wartet" : (stats.totalCount + " gute Entscheidungen insgesamt")) +
-      "  ·  Speicher: " + (Store.mode === "claude" ? "Claude" : "IndexedDB (lokal)");
+      (stats.totalCount === 0 ? "Dein erster Eintrag wartet" : (stats.totalCount + " gute Entscheidungen insgesamt"));
+    document.getElementById("storage-mode-info").textContent =
+      "Speicher: " + (Store.mode === "claude" ? "Claude" : "IndexedDB (lokal)");
     document.getElementById("ring").innerHTML = renderRing(stats.todayCount);
 
     var tagRow = document.getElementById("tag-row");
@@ -502,8 +551,8 @@
       tagRow.appendChild(btn);
     });
 
-    var sortedDecisions = state.decisions.slice().sort(function (a, b) { return b.count - a.count; });
-    var topTen = sortedDecisions.slice(0, 10);
+    var sortedDecisions = state.decisions.slice().filter(function (d) { return d.count > 1; }).sort(function (a, b) { return b.count - a.count; });
+    var topTen = sortedDecisions.slice(0, 5);
     var top10Card = document.getElementById("top10-card");
     var top10List = document.getElementById("top10-list");
     top10List.innerHTML = "";
@@ -614,6 +663,67 @@
 
     renderTodayList(stats);
     renderGallery();
+    renderMantras();
+  }
+
+  function renderMantras() {
+    var list = document.getElementById("mantra-list");
+    list.innerHTML = "";
+    state.mantras.forEach(function (m, index) {
+      var row = document.createElement("div");
+      row.className = "mantra-row";
+
+      var moveBox = document.createElement("div");
+      moveBox.style.cssText = "display:flex; flex-direction:column; flex-shrink:0;";
+      var upBtn = document.createElement("button");
+      upBtn.type = "button";
+      upBtn.className = "mantra-move";
+      upBtn.textContent = "▲";
+      upBtn.disabled = index === 0;
+      upBtn.title = "Nach oben verschieben";
+      upBtn.addEventListener("click", function () {
+        var arr = state.mantras;
+        var tmp = arr[index - 1];
+        arr[index - 1] = arr[index];
+        arr[index] = tmp;
+        renderMantras();
+        persist();
+      });
+      var downBtn = document.createElement("button");
+      downBtn.type = "button";
+      downBtn.className = "mantra-move";
+      downBtn.textContent = "▼";
+      downBtn.disabled = index === state.mantras.length - 1;
+      downBtn.title = "Nach unten verschieben";
+      downBtn.addEventListener("click", function () {
+        var arr = state.mantras;
+        var tmp = arr[index + 1];
+        arr[index + 1] = arr[index];
+        arr[index] = tmp;
+        renderMantras();
+        persist();
+      });
+      moveBox.appendChild(upBtn);
+      moveBox.appendChild(downBtn);
+      row.appendChild(moveBox);
+
+      var span = document.createElement("span");
+      span.className = "mantra-text";
+      span.textContent = m.text;
+      row.appendChild(span);
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "mantra-del";
+      delBtn.textContent = "✕";
+      delBtn.title = "Merksatz löschen";
+      delBtn.addEventListener("click", function () {
+        state.mantras = state.mantras.filter(function (x) { return x.id !== m.id; });
+        renderMantras();
+        persist();
+      });
+      row.appendChild(delBtn);
+      list.appendChild(row);
+    });
   }
 
   function renderTodayList(stats) {
@@ -640,8 +750,25 @@
       row.innerHTML =
         '<span class="dot" style="background:' + (tag ? tag.color : "#E8DCC8") + ';"></span>' +
         '<span class="txt">' + (tag ? tag.icon + " " : "") + escapeHtml(decision ? decision.text : "?") + '</span>' +
-        (entry.photoId ? '<span title="Mit Foto">📷</span>' : "") +
         '<span class="time">' + time + '</span>';
+
+      if (entry.photoId) {
+        var photoSpan = document.createElement("span");
+        photoSpan.title = "Mit Foto";
+        photoSpan.textContent = "📷";
+        row.appendChild(photoSpan);
+      } else {
+        var addPhotoBtn = document.createElement("button");
+        addPhotoBtn.type = "button";
+        addPhotoBtn.title = "Foto nachträglich hinzufügen";
+        addPhotoBtn.textContent = "📷+";
+        addPhotoBtn.style.cssText = "background:none; border:none; color:#8A7E70; font-size:12px; padding:2px 4px; flex-shrink:0;";
+        addPhotoBtn.addEventListener("click", function () {
+          pendingPhotoTargetEntryId = entry.id;
+          document.getElementById("today-photo-input").click();
+        });
+        row.appendChild(addPhotoBtn);
+      }
       list.appendChild(row);
     });
   }
@@ -670,12 +797,12 @@
 
       var cached = state.photoCache[entry.photoId];
       if (cached) {
-        thumb.innerHTML = '<img src="' + cached + '" style="width:100%; height:100%; object-fit:cover; display:block;" />';
+        thumb.innerHTML = '<img src="' + cached + '" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover; display:block;" />';
       } else {
         thumb.innerHTML = '<span style="font-size:11px; color:#8A7E70;">Lädt …</span>';
         loadPhoto(entry.photoId).then(function (url) {
           if (url) {
-            thumb.innerHTML = '<img src="' + url + '" style="width:100%; height:100%; object-fit:cover; display:block;" />';
+            thumb.innerHTML = '<img src="' + url + '" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover; display:block;" />';
           } else {
             thumb.innerHTML = '<span style="font-size:10px; color:#8A7E70; padding:4px; text-align:center;">Nicht gefunden</span>';
             var delBtn = document.createElement("button");
@@ -724,6 +851,7 @@
       setStatus("Bitte etwas eintippen oder ein Foto hinzufügen.", "info");
       return;
     }
+    document.getElementById("suggestions").style.display = "none";
     var btn = this;
     btn.disabled = true;
     var ok = await recordDecision(text, state.selectedTag, null, state.pendingPhoto);
@@ -757,9 +885,82 @@
     document.getElementById("photo-preview").style.display = "none";
     document.getElementById("photo-input").value = "";
   });
-  document.getElementById("decision-input").addEventListener("keydown", function (e) {
-    if (e.key === "Enter") { e.preventDefault(); document.getElementById("save-btn").click(); }
+  document.getElementById("today-photo-input").addEventListener("change", async function (e) {
+    var file = e.target.files && e.target.files[0];
+    var entryId = pendingPhotoTargetEntryId;
+    e.target.value = "";
+    pendingPhotoTargetEntryId = null;
+    if (!file || !entryId) return;
+
+    var entry = state.log.find(function (l) { return l.id === entryId; });
+    if (!entry) return;
+
+    setStatus("Foto wird verarbeitet …", "info");
+    try {
+      var dataUrl = await compressImage(file);
+      var photoId = uid();
+      state.photoCache[photoId] = dataUrl;
+      var saved = await savePhoto(photoId, dataUrl);
+      if (!saved) {
+        setStatus("Foto konnte nicht gespeichert werden — bitte nochmal versuchen.", "err");
+        return;
+      }
+      entry.photoId = photoId;
+      render();
+      await persist();
+      setStatus("Foto zum Eintrag hinzugefügt.", "ok");
+    } catch (err) {
+      setStatus("Foto konnte nicht verarbeitet werden: " + err.message, "err");
+    }
   });
+  document.getElementById("decision-input").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); hideSuggestions(); document.getElementById("save-btn").click(); }
+  });
+  document.getElementById("decision-input").addEventListener("input", function (e) {
+    showSuggestionsFor(e.target.value);
+  });
+  document.getElementById("decision-input").addEventListener("focus", function (e) {
+    showSuggestionsFor(e.target.value);
+  });
+  document.addEventListener("click", function (e) {
+    if (e.target.id !== "decision-input" && !e.target.closest("#suggestions")) hideSuggestions();
+  });
+
+  function hideSuggestions() {
+    document.getElementById("suggestions").style.display = "none";
+  }
+
+  function showSuggestionsFor(query) {
+    var box = document.getElementById("suggestions");
+    var q = query.trim().toLowerCase();
+    var matches = state.decisions
+      .filter(function (d) { return q === "" || d.text.toLowerCase().indexOf(q) !== -1; })
+      .sort(function (a, b) { return b.count - a.count; })
+      .slice(0, 5);
+
+    if (matches.length === 0) { hideSuggestions(); return; }
+
+    box.innerHTML = "";
+    matches.forEach(function (d) {
+      var tag = TAG_MAP[d.tag];
+      var item = document.createElement("div");
+      item.className = "suggestion-item";
+      item.innerHTML =
+        '<span style="width:8px; height:8px; border-radius:50%; flex-shrink:0; background:' + (tag ? tag.color : "#E8DCC8") + ';"></span>' +
+        '<span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(d.text) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace; font-size:11px; color:#8A7E70;">' + d.count + '×</span>';
+      item.addEventListener("click", function () {
+        document.getElementById("decision-input").value = d.text;
+        state.selectedTag = d.tag;
+        hideSuggestions();
+        render();
+        document.getElementById("decision-input").focus();
+      });
+      box.appendChild(item);
+    });
+    box.style.display = "block";
+  }
+
   document.getElementById("view-heute").addEventListener("click", function () { state.view = "heute"; render(); });
   document.getElementById("view-woche").addEventListener("click", function () { state.view = "woche"; render(); });
   document.getElementById("reset-btn").addEventListener("click", function () {
@@ -797,6 +998,29 @@
     if (e.target.id === "lightbox") e.target.style.display = "none";
   });
 
+  document.getElementById("mantra-open-btn").addEventListener("click", function () {
+    document.getElementById("mantra-overlay").style.display = "flex";
+  });
+  document.getElementById("mantra-close-btn").addEventListener("click", function () {
+    document.getElementById("mantra-overlay").style.display = "none";
+  });
+  document.getElementById("mantra-overlay").addEventListener("click", function (e) {
+    if (e.target.id === "mantra-overlay") e.target.style.display = "none";
+  });
+
+  document.getElementById("mantra-add-btn").addEventListener("click", function () {
+    var input = document.getElementById("mantra-input");
+    var text = input.value.trim();
+    if (!text) return;
+    state.mantras.push({ id: uid(), text: text });
+    input.value = "";
+    renderMantras();
+    persist();
+  });
+  document.getElementById("mantra-input").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("mantra-add-btn").click(); }
+  });
+
   document.getElementById("export-btn").addEventListener("click", async function () {
     var btn = this;
     var originalLabel = btn.textContent;
@@ -817,6 +1041,7 @@
         version: 1,
         decisions: state.decisions,
         log: state.log,
+        mantras: state.mantras,
         photos: photos
       };
 
@@ -890,9 +1115,21 @@
         }
       }
 
+      var addedMantras = 0;
+      if (Array.isArray(data.mantras)) {
+        var existingMantraTexts = state.mantras.map(function (m) { return m.text; });
+        data.mantras.forEach(function (m) {
+          if (m && m.text && existingMantraTexts.indexOf(m.text) === -1) {
+            state.mantras.push({ id: uid(), text: m.text });
+            existingMantraTexts.push(m.text);
+            addedMantras++;
+          }
+        });
+      }
+
       render();
       await persist();
-      setStatus("Import fertig: " + addedDecisions + " neue Entscheidungen, " + addedLog + " neue Verlaufseinträge, " + addedPhotos + " Fotos.", "ok");
+      setStatus("Import fertig: " + addedDecisions + " neue Entscheidungen, " + addedLog + " neue Verlaufseinträge, " + addedPhotos + " Fotos, " + addedMantras + " Merksätze.", "ok");
     } catch (err) {
       setStatus("Import fehlgeschlagen: " + err.message, "err");
     } finally {
