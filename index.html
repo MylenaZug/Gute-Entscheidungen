@@ -19,7 +19,7 @@
 <body>
 <div id="app" style="font-family: 'Work Sans', -apple-system, sans-serif; max-width: 640px; margin: 0 auto; padding: 1.5rem 1.25rem; color: #2B2B26;">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Caveat:wght@500;600;700&display=swap');
     #app * { box-sizing: border-box; }
     #app { overflow-x: hidden; max-width: 100%; }
     #app .card { background: #fff; border: 1px solid #E8DCC8; border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; }
@@ -41,6 +41,11 @@
     #app .mantra-row .mantra-del { background: none; border: none; color: #8A7E70; font-size: 13px; padding: 2px 4px; flex-shrink: 0; }
     #app .mantra-move { background: none; border: none; color: #8A7E70; font-size: 9px; padding: 1px 4px; line-height: 1.4; }
     #app .mantra-move:disabled { opacity: 0.25; }
+    #app .mantra-static { position: relative; padding: 14px 16px 14px 20px; border-left: 3px solid #D97B4F; background: #FCFAF5; border-radius: 0 12px 12px 0; }
+    #app .mantra-static .mantra-static-text { font-family: 'Fraunces', Georgia, serif; font-size: 14.5px; line-height: 1.5; color: #2B2B26; margin: 0; }
+    #app .spiral-ring { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #d9d2c2 60%, #b8ae94 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.3), 0 1px 1px rgba(255,255,255,0.6); }
+    #app .mantra-margin-line { position: absolute; top: 0; bottom: 0; left: 20px; width: 1px; background: #E3A9A0; }
+    #app .mantra-handwritten { font-family: 'Caveat', cursive; font-size: 23px; font-weight: 600; line-height: 1.5; margin: 0 0 10px; padding: 0 4px 0 12px; white-space: normal; }
     #app .suggestion-item { padding: 10px 12px; font-size: 13.5px; cursor: pointer; border-bottom: 1px solid #F1ECE0; display: flex; align-items: center; gap: 8px; }
     #app .suggestion-item:last-child { border-bottom: none; }
     #app .suggestion-item:active { background: #F7F2EA; }
@@ -64,17 +69,26 @@
   </div>
 
   <div id="mantra-overlay" style="display:none; position:fixed; inset:0; background:rgba(22,36,29,0.85); z-index:1000; align-items:flex-end; justify-content:center;">
-    <div style="max-width:480px; width:100%; max-height:80vh; background:#fff; border-radius:20px 20px 0 0; overflow:hidden; display:flex; flex-direction:column;">
-      <div style="padding:20px 20px 0;">
-        <h2 style="margin:0 0 4px;">Merksätze</h2>
-        <p style="font-size:12.5px; color:#8A7E70; margin:0 0 14px;">Kleine Erinnerungen, bevor du dich entscheidest.</p>
+    <div id="mantra-panel" style="max-width:480px; width:100%; max-height:82vh; background:#FBF6E9; border-radius:14px 14px 0 0; overflow:hidden; display:flex; flex-direction:column; position:relative; box-shadow:0 -8px 30px rgba(0,0,0,0.25);">
+      <div id="mantra-spiral" style="display:flex; justify-content:space-evenly; padding:10px 24px 0; flex-shrink:0;"></div>
+      <div style="padding:14px 28px 0 34px; display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <h2 style="margin:0 0 2px; font-family:'Caveat',cursive; font-size:26px; font-weight:700; color:#2B3A4A;">Meine Merksätze</h2>
+          <p style="font-size:11.5px; color:#8A7E70; margin:0 0 6px;">Kleine Erinnerungen, bevor du dich entscheidest.</p>
+        </div>
+        <button id="mantra-edit-toggle-btn" type="button" style="background:#fff; color:#1E4D4A; border:1px solid #E8DCC8; border-radius:10px; padding:7px 14px; font-size:12.5px; font-weight:500; flex-shrink:0; white-space:nowrap;">Bearbeiten</button>
       </div>
-      <div id="mantra-list" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding:0 20px 14px;"></div>
-      <div style="display:flex; gap:8px; padding:14px 20px; border-top:1px solid #F1ECE0;">
-        <input type="text" id="mantra-input" placeholder="Eigenen Merksatz hinzufügen …" style="flex:1; min-width:120px;" />
-        <button id="mantra-add-btn" type="button" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:0 16px; font-size:13px; font-weight:500; flex-shrink:0; height:40px;">Hinzufügen</button>
+      <div id="mantra-list" style="display:flex; flex-direction:column; overflow-y:auto; padding:6px 28px 20px 34px; position:relative;"></div>
+      <div id="mantra-edit-tools" style="display:none; background:#fff;">
+        <div style="display:flex; gap:8px; padding:14px 20px; border-top:1px solid #E8DCC8;">
+          <input type="text" id="mantra-input" placeholder="Eigenen Merksatz hinzufügen …" style="flex:1; min-width:120px;" />
+          <button id="mantra-add-btn" type="button" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:0 16px; font-size:13px; font-weight:500; flex-shrink:0; height:40px;">Hinzufügen</button>
+        </div>
+        <div style="padding:0 20px 16px;">
+          <button id="mantra-reset-btn" type="button" style="width:100%; background:#fff; color:#791F1F; border:1px solid #F09595; border-radius:10px; padding:10px; font-size:12.5px; font-weight:500;">Liste durch Vorschläge ersetzen</button>
+        </div>
       </div>
-      <div style="padding:0 20px 20px;">
+      <div style="padding:0 20px 20px; background:#fff;">
         <button id="mantra-close-btn" type="button" style="width:100%; background:#F7F2EA; color:#1E4D4A; border:none; border-radius:10px; padding:10px; font-size:13px; font-weight:500;">Schließen</button>
       </div>
     </div>
@@ -198,18 +212,21 @@
   var STORAGE_KEY = "gute-entscheidungen-data";
 
   var DEFAULT_MANTRAS = [
-    "Ich habe die Wahl – und ich wähle gut für mich.",
-    "Eine gute Entscheidung fühlt sich morgen noch richtig an.",
-    "Ich bin es wert, gut für mich zu sorgen.",
-    "Klein anfangen zählt auch.",
-    "Ich muss nicht perfekt sein, nur ehrlich mit mir.",
-    "Was würde mein zukünftiges Ich sich wünschen?",
-    "Ich darf Nein sagen, wenn es mir nicht gut tut.",
-    "Gute Gewohnheiten schlagen kurzfristige Lust."
+    "Jede Entscheidung ist eine neue Chance.",
+    "Ich identifiziere mich als gesunder sportlicher Mensch.",
+    "Eine gute Entscheidung wiegt mehr als keine gute Entscheidung.",
+    "Ist Essen jetzt die Antwort auf mein Gefühl?",
+    "Ich muss nicht alles ändern. Eine gute Entscheidung reicht für den nächsten Schritt.",
+    "Was brauche ich gerade wirklich?",
+    "Ich will mich heute Abend über meine Entscheidung freuen.",
+    "Ich habe die Wahl - und ich wähle gut für mich.",
+    "Eine Belohnung muss mir auch danach noch guttun.",
+    "Ich entscheide."
   ];
 
   var state = { decisions: [], log: [], mantras: null, selectedTag: TAGS[0].id, view: "heute", selectedDate: null, pendingPhoto: null, photoCache: {} };
   var pendingPhotoTargetEntryId = null;
+  state.mantraEditMode = false;
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
   function todayISO(d) {
@@ -379,6 +396,17 @@
     return null;
   }
 
+  var OLD_DEFAULT_MANTRAS = [
+    "Ich habe die Wahl – und ich wähle gut für mich.",
+    "Eine gute Entscheidung fühlt sich morgen noch richtig an.",
+    "Ich bin es wert, gut für mich zu sorgen.",
+    "Klein anfangen zählt auch.",
+    "Ich muss nicht perfekt sein, nur ehrlich mit mir.",
+    "Was würde mein zukünftiges Ich sich wünschen?",
+    "Ich darf Nein sagen, wenn es mir nicht gut tut.",
+    "Gute Gewohnheiten schlagen kurzfristige Lust."
+  ];
+
   async function load() {
     document.getElementById("date-input").value = todayISO();
     document.getElementById("date-input").max = todayISO();
@@ -398,8 +426,13 @@
     } catch (e) {
       // Erststart, noch nichts gespeichert
     }
-    if (!state.mantras) {
+    var isUnmodifiedOldDefault =
+      Array.isArray(state.mantras) &&
+      state.mantras.length === OLD_DEFAULT_MANTRAS.length &&
+      state.mantras.every(function (m, i) { return m.text === OLD_DEFAULT_MANTRAS[i]; });
+    if (!state.mantras || isUnmodifiedOldDefault) {
       state.mantras = DEFAULT_MANTRAS.map(function (text) { return { id: uid(), text: text }; });
+      if (isUnmodifiedOldDefault) persist();
     }
     render();
   }
@@ -666,9 +699,28 @@
     renderMantras();
   }
 
+  var MANTRA_COLORS = ["#D7263D", "#1B998B", "#2E86AB", "#E76F51", "#8E44AD", "#457B9D", "#C97A02", "#2A9D8F", "#B0578D"];
+
   function renderMantras() {
     var list = document.getElementById("mantra-list");
     list.innerHTML = "";
+
+    if (!state.mantraEditMode) {
+      list.style.position = "relative";
+      var marginLine = document.createElement("div");
+      marginLine.className = "mantra-margin-line";
+      list.appendChild(marginLine);
+      state.mantras.forEach(function (m, index) {
+        var p = document.createElement("p");
+        p.className = "mantra-handwritten";
+        p.style.color = MANTRA_COLORS[index % MANTRA_COLORS.length];
+        p.textContent = m.text;
+        list.appendChild(p);
+      });
+      return;
+    }
+    list.style.gap = "10px";
+
     state.mantras.forEach(function (m, index) {
       var row = document.createElement("div");
       row.className = "mantra-row";
@@ -999,7 +1051,41 @@
   });
 
   document.getElementById("mantra-open-btn").addEventListener("click", function () {
+    var spiral = document.getElementById("mantra-spiral");
+    if (!spiral.hasChildNodes()) {
+      for (var i = 0; i < 12; i++) {
+        var ring = document.createElement("div");
+        ring.className = "spiral-ring";
+        spiral.appendChild(ring);
+      }
+    }
     document.getElementById("mantra-overlay").style.display = "flex";
+  });
+  document.getElementById("mantra-edit-toggle-btn").addEventListener("click", function () {
+    state.mantraEditMode = !state.mantraEditMode;
+    this.textContent = state.mantraEditMode ? "Fertig" : "Bearbeiten";
+    document.getElementById("mantra-edit-tools").style.display = state.mantraEditMode ? "block" : "none";
+    renderMantras();
+  });
+  document.getElementById("mantra-reset-btn").addEventListener("click", function () {
+    var btn = this;
+    if (btn.dataset.confirm !== "1") {
+      btn.dataset.confirm = "1";
+      btn.textContent = "Wirklich ersetzen? Nochmal tippen zum Bestätigen";
+      setTimeout(function () {
+        if (btn.dataset.confirm === "1") {
+          btn.dataset.confirm = "0";
+          btn.textContent = "Liste durch Vorschläge ersetzen";
+        }
+      }, 4000);
+      return;
+    }
+    btn.dataset.confirm = "0";
+    btn.textContent = "Liste durch Vorschläge ersetzen";
+    state.mantras = DEFAULT_MANTRAS.map(function (text) { return { id: uid(), text: text }; });
+    renderMantras();
+    persist();
+    setStatus("Merksätze durch die neue Liste ersetzt.", "ok");
   });
   document.getElementById("mantra-close-btn").addEventListener("click", function () {
     document.getElementById("mantra-overlay").style.display = "none";
