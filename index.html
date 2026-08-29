@@ -606,7 +606,12 @@
 
     var tagRow = document.getElementById("tag-row");
     tagRow.innerHTML = "";
-    activeTags().forEach(function (t) {
+    var tagUsageCounts = {};
+    state.log.forEach(function (l) { tagUsageCounts[l.tag] = (tagUsageCounts[l.tag] || 0) + 1; });
+    var sortedActiveTags = activeTags().sort(function (a, b) {
+      return (tagUsageCounts[b.id] || 0) - (tagUsageCounts[a.id] || 0);
+    });
+    sortedActiveTags.forEach(function (t) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "tag-chip" + (state.selectedTag === t.id ? " active" : "");
