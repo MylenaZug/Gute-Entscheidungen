@@ -41,6 +41,11 @@
     #app .mantra-row .mantra-del { background: none; border: none; color: #8A7E70; font-size: 13px; padding: 2px 4px; flex-shrink: 0; }
     #app .mantra-move { background: none; border: none; color: #8A7E70; font-size: 9px; padding: 1px 4px; line-height: 1.4; }
     #app .mantra-move:disabled { opacity: 0.25; }
+    #app .tag-edit-row { display: flex; align-items: center; gap: 8px; }
+    #app .tag-edit-row select { font-size: 20px; padding: 6px; border-radius: 10px; border: 1px solid #E8DCC8; background: #FCFDFA; flex-shrink: 0; width: 54px; }
+    #app .tag-edit-row input[type=text] { font-size: 14px; }
+    #app .tag-del-btn { background: none; border: none; color: #791F1F; font-size: 15px; padding: 4px 6px; flex-shrink: 0; }
+    #app .tag-del-btn:disabled { opacity: 0.25; }
     #app .mantra-static { position: relative; padding: 14px 16px 14px 20px; border-left: 3px solid #D97B4F; background: #FCFAF5; border-radius: 0 12px 12px 0; }
     #app .mantra-static .mantra-static-text { font-family: 'Fraunces', Georgia, serif; font-size: 14.5px; line-height: 1.5; color: #2B2B26; margin: 0; }
     #app .spiral-ring { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #d9d2c2 60%, #b8ae94 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.3), 0 1px 1px rgba(255,255,255,0.6); }
@@ -94,6 +99,22 @@
     </div>
   </div>
 
+  <div id="tags-overlay" style="display:none; position:fixed; inset:0; background:rgba(22,36,29,0.85); z-index:1000; align-items:flex-end; justify-content:center;">
+    <div style="max-width:480px; width:100%; max-height:82vh; background:#fff; border-radius:20px 20px 0 0; overflow:hidden; display:flex; flex-direction:column;">
+      <div style="padding:20px 20px 0;">
+        <h2 style="margin:0 0 4px;">Tags bearbeiten</h2>
+        <p style="font-size:12.5px; color:#8A7E70; margin:0 0 14px;">Name und Symbol frei anpassen — bis zu 9 Tags.</p>
+      </div>
+      <div id="tags-edit-list" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding:0 20px 12px;"></div>
+      <div style="padding:0 20px 16px;">
+        <button id="tags-add-btn" type="button" style="width:100%; background:#F7F2EA; color:#1E4D4A; border:1px dashed #E8DCC8; border-radius:10px; padding:10px; font-size:13px; font-weight:500;">+ Neuen Tag hinzufügen</button>
+      </div>
+      <div style="padding:0 20px 20px;">
+        <button id="tags-close-btn" type="button" style="width:100%; background:#F7F2EA; color:#1E4D4A; border:none; border-radius:10px; padding:10px; font-size:13px; font-weight:500;">Schließen</button>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <label style="font-size:12px; color:#8A7E70; font-weight:500; display:block; margin-bottom:6px;">Deine Entscheidung</label>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -119,6 +140,7 @@
     </div>
     <p id="date-banner" style="font-size:12px; color:#D97B4F; margin:8px 0 0; display:none;"></p>
     <div id="tag-row" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:14px;"></div>
+    <button id="tags-open-btn" type="button" style="width:100%; background:none; border:none; color:#8A7E70; font-size:12px; padding:10px 0 0; text-align:center;">⚙️ Tags bearbeiten</button>
     <div id="status" class="status info" style="display:none;"></div>
   </div>
 
@@ -134,12 +156,6 @@
       <p style="font-size:12px; color:#8A7E70; margin:0;" id="last-entry-preview">Noch kein Eintrag vorhanden.</p>
     </div>
     <button id="reset-btn" style="background:#fff; color:#791F1F; border:1px solid #F09595; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:500; flex-shrink:0;">Letzten löschen</button>
-  </div>
-
-  <div class="card" id="top10-card" style="display:none;">
-    <h2>Deine 5 häufigsten guten Entscheidungen</h2>
-    <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;">Ein Klick zählt sie erneut (für das oben gewählte Datum).</p>
-    <div id="top10-list"></div>
   </div>
 
   <div class="card">
@@ -196,7 +212,11 @@
 
 <script>
 (function () {
-  var TAGS = [
+  var MAX_TAGS = 9;
+  var TAG_PALETTE = ["#2D5942", "#D97B4F", "#3B8C6E", "#F0674A", "#B0578D", "#3F9C8F", "#8C6E54", "#7A6FD1", "#2E86AB"];
+  var EMOJI_CHOICES = ["💪", "🧠", "💰", "🌍", "😊", "🤝", "🎨", "🧺", "🌿", "🧭", "📚", "😴", "🙏", "💧", "🏆", "⭐️", "🔥", "🌸", "🍀", "🎯", "📖", "✏️", "🎵", "🧘", "🚴", "🍎", "🥗", "🧹", "🌞", "🌙", "💡", "🎉", "👏", "❤️", "🌳", "🚀", "🎁", "🕯️", "🧩", "🌻"];
+
+  var DEFAULT_TAGS = [
     { id: "koerper", label: "Gesundheit gestärkt", icon: "💪", color: "#2D5942" },
     { id: "geld", label: "Geld gespart", icon: "💰", color: "#D97B4F" },
     { id: "planet", label: "Planet geschont", icon: "🌍", color: "#3B8C6E" },
@@ -208,7 +228,13 @@
     { id: "abenteuer", label: "Neues gewagt", icon: "🧭", color: "#2E86AB" }
   ];
   var TAG_MAP = {};
-  TAGS.forEach(function (t) { TAG_MAP[t.id] = t; });
+  function rebuildTagMap() {
+    TAG_MAP = {};
+    state.tags.forEach(function (t) { TAG_MAP[t.id] = t; });
+  }
+  function activeTags() {
+    return state.tags.filter(function (t) { return !t.archived; });
+  }
   var STORAGE_KEY = "gute-entscheidungen-data";
 
   var DEFAULT_MANTRAS = [
@@ -224,7 +250,7 @@
     "Ich entscheide."
   ];
 
-  var state = { decisions: [], log: [], mantras: null, selectedTag: TAGS[0].id, view: "heute", selectedDate: null, pendingPhoto: null, photoCache: {} };
+  var state = { decisions: [], log: [], mantras: null, tags: null, selectedTag: null, view: "heute", selectedDate: null, pendingPhoto: null, photoCache: {} };
   var pendingPhotoTargetEntryId = null;
   state.mantraEditMode = false;
 
@@ -422,6 +448,7 @@
         state.decisions = parsed.decisions || [];
         state.log = parsed.log || [];
         state.mantras = parsed.mantras || null;
+        state.tags = parsed.tags || null;
       }
     } catch (e) {
       // Erststart, noch nichts gespeichert
@@ -434,6 +461,13 @@
       state.mantras = DEFAULT_MANTRAS.map(function (text) { return { id: uid(), text: text }; });
       if (isUnmodifiedOldDefault) persist();
     }
+    if (!state.tags || state.tags.length === 0) {
+      state.tags = DEFAULT_TAGS.map(function (t) { return Object.assign({}, t); });
+    }
+    rebuildTagMap();
+    if (!state.selectedTag || !TAG_MAP[state.selectedTag]) {
+      state.selectedTag = activeTags()[0].id;
+    }
     render();
   }
 
@@ -443,7 +477,7 @@
       return;
     }
     try {
-      var result = await Store.set(STORAGE_KEY, JSON.stringify({ decisions: state.decisions, log: state.log, mantras: state.mantras }));
+      var result = await Store.set(STORAGE_KEY, JSON.stringify({ decisions: state.decisions, log: state.log, mantras: state.mantras, tags: state.tags }));
       if (result) {
         setStatus("Gespeichert.", "ok");
       } else {
@@ -504,7 +538,7 @@
 
     function byTag(entries) {
       var map = {};
-      TAGS.forEach(function (t) { map[t.id] = 0; });
+      Object.keys(TAG_MAP).forEach(function (id) { map[id] = 0; });
       entries.forEach(function (e) { map[e.tag] = (map[e.tag] || 0) + 1; });
       return map;
     }
@@ -515,7 +549,7 @@
       var iso = todayISO(d);
       var dayEntries = state.log.filter(function (l) { return l.date === iso; });
       var tagCounts = {};
-      TAGS.forEach(function (t) { tagCounts[t.id] = 0; });
+      Object.keys(TAG_MAP).forEach(function (id) { tagCounts[id] = 0; });
       dayEntries.forEach(function (e) { tagCounts[e.tag] = (tagCounts[e.tag] || 0) + 1; });
       return { label: label, count: dayEntries.length, tagCounts: tagCounts, isToday: iso === isoToday, isFuture: d > today };
     });
@@ -572,7 +606,7 @@
 
     var tagRow = document.getElementById("tag-row");
     tagRow.innerHTML = "";
-    TAGS.forEach(function (t) {
+    activeTags().forEach(function (t) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "tag-chip" + (state.selectedTag === t.id ? " active" : "");
@@ -583,26 +617,6 @@
       btn.addEventListener("click", function () { state.selectedTag = t.id; render(); });
       tagRow.appendChild(btn);
     });
-
-    var sortedDecisions = state.decisions.slice().filter(function (d) { return d.count > 1; }).sort(function (a, b) { return b.count - a.count; });
-    var topTen = sortedDecisions.slice(0, 5);
-    var top10Card = document.getElementById("top10-card");
-    var top10List = document.getElementById("top10-list");
-    top10List.innerHTML = "";
-    if (topTen.length > 0) {
-      top10Card.style.display = "block";
-      topTen.forEach(function (d) {
-        var tag = TAG_MAP[d.tag];
-        var btn = document.createElement("button");
-        btn.className = "pill";
-        btn.style.borderColor = tag ? tag.color : "#E8DCC8";
-        btn.innerHTML = '<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(d.text) + '</span><span style="font-family:\'IBM Plex Mono\',monospace; font-size:12px; color:#8A7E70;">' + d.count + '×</span>';
-        btn.addEventListener("click", function () { recordDecision(d.text, d.tag, d.id); });
-        top10List.appendChild(btn);
-      });
-    } else {
-      top10Card.style.display = "none";
-    }
 
     var activeByTag = state.view === "heute" ? stats.byTagToday : stats.byTagWeek;
     var activeTotal = state.view === "heute" ? stats.todayCount : stats.weekTotal;
@@ -632,7 +646,7 @@
       var totalHeight = (d.isFuture || d.count === 0) ? 0 : Math.max(4, (d.count / maxDayCount) * 100);
       var segmentsHtml = "";
       if (totalHeight > 0) {
-        TAGS.forEach(function (t) {
+        state.tags.forEach(function (t) {
           var tCount = d.tagCounts[t.id] || 0;
           if (tCount === 0) return;
           var segHeight = (tCount / d.count) * totalHeight;
@@ -650,17 +664,19 @@
 
     var tagStats = document.getElementById("tag-stats");
     tagStats.innerHTML = "";
-    TAGS.forEach(function (t) {
-      var count = stats.byTagAll[t.id] || 0;
-      var pct = stats.totalCount > 0 ? (count / stats.totalCount) * 100 : 0;
-      var row = document.createElement("div");
-      row.style.cssText = "display:flex; align-items:center; gap:8px; margin-bottom:9px;";
-      row.innerHTML =
-        '<span style="font-size:12.5px; width:160px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + t.icon + ' ' + t.label + '</span>' +
-        '<div style="flex:1; height:6px; border-radius:3px; background:#F7F2EA; overflow:hidden;"><div style="height:100%; border-radius:3px; width:' + pct + '%; background:' + t.color + ';"></div></div>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace; font-size:12px; color:#8A7E70; width:18px; text-align:right;">' + count + '</span>';
-      tagStats.appendChild(row);
-    });
+    state.tags
+      .filter(function (t) { return !t.archived || (stats.byTagAll[t.id] || 0) > 0; })
+      .forEach(function (t) {
+        var count = stats.byTagAll[t.id] || 0;
+        var pct = stats.totalCount > 0 ? (count / stats.totalCount) * 100 : 0;
+        var row = document.createElement("div");
+        row.style.cssText = "display:flex; align-items:center; gap:8px; margin-bottom:9px;";
+        row.innerHTML =
+          '<span style="font-size:12.5px; width:160px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;' + (t.archived ? ' opacity:0.6;' : '') + '">' + t.icon + ' ' + t.label + (t.archived ? ' <span style="font-size:10px;">(gelöscht)</span>' : '') + '</span>' +
+          '<div style="flex:1; height:6px; border-radius:3px; background:#F7F2EA; overflow:hidden;"><div style="height:100%; border-radius:3px; width:' + pct + '%; background:' + t.color + ';"></div></div>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace; font-size:12px; color:#8A7E70; width:18px; text-align:right;">' + count + '</span>';
+        tagStats.appendChild(row);
+      });
 
     var emptyState = document.getElementById("empty-state");
     if (activeTotal === 0) {
@@ -700,6 +716,68 @@
   }
 
   var MANTRA_COLORS = ["#D7263D", "#1B998B", "#2E86AB", "#E76F51", "#8E44AD", "#457B9D", "#C97A02", "#2A9D8F", "#B0578D"];
+
+  function buildEmojiSelectHTML(selected) {
+    return EMOJI_CHOICES.map(function (e) {
+      return '<option value="' + e + '"' + (e === selected ? " selected" : "") + '>' + e + '</option>';
+    }).join("");
+  }
+
+  function renderTagsEditList() {
+    var list = document.getElementById("tags-edit-list");
+    list.innerHTML = "";
+    var active = activeTags();
+    active.forEach(function (t) {
+      var row = document.createElement("div");
+      row.className = "tag-edit-row";
+
+      var select = document.createElement("select");
+      select.innerHTML = buildEmojiSelectHTML(t.icon);
+      select.addEventListener("change", function () {
+        t.icon = select.value;
+        persist();
+        render();
+      });
+      row.appendChild(select);
+
+      var input = document.createElement("input");
+      input.type = "text";
+      input.value = t.label;
+      input.style.flex = "1";
+      input.style.minWidth = "0";
+      input.addEventListener("change", function () {
+        var val = input.value.trim();
+        t.label = val || t.label;
+        input.value = t.label;
+        persist();
+        render();
+      });
+      row.appendChild(input);
+
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "tag-del-btn";
+      delBtn.textContent = "✕";
+      delBtn.title = "Tag löschen (bisherige Einträge bleiben in der Auswertung sichtbar)";
+      delBtn.disabled = active.length <= 1;
+      delBtn.addEventListener("click", function () {
+        if (activeTags().length <= 1) return;
+        t.archived = true;
+        if (state.selectedTag === t.id) {
+          state.selectedTag = activeTags()[0] ? activeTags()[0].id : null;
+        }
+        renderTagsEditList();
+        persist();
+        render();
+      });
+      row.appendChild(delBtn);
+
+      list.appendChild(row);
+    });
+
+    document.getElementById("tags-add-btn").disabled = active.length >= MAX_TAGS;
+    document.getElementById("tags-add-btn").style.opacity = active.length >= MAX_TAGS ? "0.4" : "1";
+  }
 
   function renderMantras() {
     var list = document.getElementById("mantra-list");
@@ -1061,6 +1139,31 @@
     }
     document.getElementById("mantra-overlay").style.display = "flex";
   });
+  document.getElementById("tags-open-btn").addEventListener("click", function () {
+    renderTagsEditList();
+    document.getElementById("tags-overlay").style.display = "flex";
+  });
+  document.getElementById("tags-close-btn").addEventListener("click", function () {
+    document.getElementById("tags-overlay").style.display = "none";
+  });
+  document.getElementById("tags-overlay").addEventListener("click", function (e) {
+    if (e.target.id === "tags-overlay") e.target.style.display = "none";
+  });
+  document.getElementById("tags-add-btn").addEventListener("click", function () {
+    if (activeTags().length >= MAX_TAGS) return;
+    var newTag = {
+      id: uid(),
+      label: "Neuer Tag",
+      icon: EMOJI_CHOICES[state.tags.length % EMOJI_CHOICES.length],
+      color: TAG_PALETTE[state.tags.length % TAG_PALETTE.length],
+      archived: false
+    };
+    state.tags.push(newTag);
+    rebuildTagMap();
+    renderTagsEditList();
+    persist();
+    render();
+  });
   document.getElementById("mantra-edit-toggle-btn").addEventListener("click", function () {
     state.mantraEditMode = !state.mantraEditMode;
     this.textContent = state.mantraEditMode ? "Fertig" : "Bearbeiten";
@@ -1128,6 +1231,7 @@
         decisions: state.decisions,
         log: state.log,
         mantras: state.mantras,
+        tags: state.tags,
         photos: photos
       };
 
@@ -1201,6 +1305,26 @@
         }
       }
 
+      var addedTags = 0;
+      if (Array.isArray(data.tags)) {
+        var existingTagIds = {};
+        state.tags.forEach(function (t) { existingTagIds[t.id] = true; });
+        data.tags.forEach(function (t) {
+          if (t && t.id && !existingTagIds[t.id]) {
+            state.tags.push({
+              id: t.id,
+              label: t.label || "Tag",
+              icon: t.icon || "⭐️",
+              color: t.color || TAG_PALETTE[state.tags.length % TAG_PALETTE.length],
+              archived: !!t.archived
+            });
+            existingTagIds[t.id] = true;
+            addedTags++;
+          }
+        });
+        rebuildTagMap();
+      }
+
       var addedMantras = 0;
       if (Array.isArray(data.mantras)) {
         var existingMantraTexts = state.mantras.map(function (m) { return m.text; });
@@ -1215,7 +1339,7 @@
 
       render();
       await persist();
-      setStatus("Import fertig: " + addedDecisions + " neue Entscheidungen, " + addedLog + " neue Verlaufseinträge, " + addedPhotos + " Fotos, " + addedMantras + " Merksätze.", "ok");
+      setStatus("Import fertig: " + addedDecisions + " neue Entscheidungen, " + addedLog + " neue Verlaufseinträge, " + addedPhotos + " Fotos, " + addedMantras + " Merksätze, " + addedTags + " Tags.", "ok");
     } catch (err) {
       setStatus("Import fehlgeschlagen: " + err.message, "err");
     } finally {
