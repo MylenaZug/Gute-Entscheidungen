@@ -17,7 +17,7 @@
 </style>
 </head>
 <body>
-<div id="app" style="font-family: 'Work Sans', -apple-system, sans-serif; max-width: 640px; margin: 0 auto; padding: 1.5rem 1.25rem; color: #2B2B26;">
+<div id="app" style="font-family: 'Work Sans', -apple-system, sans-serif; max-width: 640px; margin: 0 auto; padding: 1.5rem 1.25rem 4.5rem; color: #2B2B26;">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Caveat:wght@500;600;700&display=swap');
     #app * { box-sizing: border-box; }
@@ -132,9 +132,9 @@
       <span style="font-size:12px; color:#8A7E70;">Foto wird mit gespeichert</span>
       <button type="button" id="photo-remove-btn" style="background:none; border:none; color:#791F1F; font-size:12px; text-decoration:underline; padding:0;">Entfernen</button>
     </div>
-    <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+    <div style="display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap;">
       <label for="date-input" style="font-size:12px; color:#8A7E70;">Für:</label>
-      <input type="date" id="date-input" style="border:1px solid #E8DCC8; border-radius:8px; padding:5px 8px; font-size:16px; font-family:inherit; background:#FCFDFA; color:#2B2B26;" />
+      <input type="date" id="date-input" style="border:1px solid #E8DCC8; border-radius:8px; padding:5px 8px; font-size:16px; font-family:inherit; background:#FCFDFA; color:#2B2B26; max-width:100%;" />
       <button type="button" id="yesterday-btn" style="background:#fff; border:1px solid #E8DCC8; border-radius:8px; padding:5px 10px; font-size:12px; color:#8A7E70;">Gestern</button>
       <button type="button" id="today-btn" style="background:#fff; border:1px solid #E8DCC8; border-radius:8px; padding:5px 10px; font-size:12px; color:#8A7E70;">Heute</button>
     </div>
@@ -145,17 +145,19 @@
   </div>
 
   <div class="card" id="today-card" style="display:none;">
-    <h2>Deine heutigen guten Entscheidungen</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+      <h2>Deine heutigen guten Entscheidungen</h2>
+      <button id="today-edit-toggle-btn" type="button" style="background:#F7F2EA; color:#1E4D4A; border:none; border-radius:10px; padding:6px 12px; font-size:12px; font-weight:500; flex-shrink:0; white-space:nowrap;">Bearbeiten</button>
+    </div>
     <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;" id="today-count-label"></p>
     <div id="today-list"></div>
   </div>
 
-  <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-    <div>
-      <h2 style="font-size:14px; margin:0 0 2px;">Letzten Eintrag löschen</h2>
-      <p style="font-size:12px; color:#8A7E70; margin:0;" id="last-entry-preview">Noch kein Eintrag vorhanden.</p>
-    </div>
-    <button id="reset-btn" style="background:#fff; color:#791F1F; border:1px solid #F09595; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:500; flex-shrink:0;">Letzten löschen</button>
+  <div class="card">
+    <h2>Verteilung nach Kategorie (gesamt)</h2>
+    <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;">Über alle deine Entscheidungen hinweg.</p>
+    <div id="tag-stats"></div>
+    <p id="empty-state" style="font-size:13px; color:#8A7E70; text-align:center; padding:12px 0 0; margin:0; display:none;"></p>
   </div>
 
   <div class="card">
@@ -166,16 +168,23 @@
         <button id="view-woche" style="border:none; background:transparent; padding:6px 12px; font-size:12.5px; font-weight:500; border-radius:8px; color:#8A7E70;">Diese Woche</button>
       </div>
     </div>
+    <div id="week-nav" style="display:none; align-items:center; justify-content:center; gap:14px; margin:-4px 0 14px;">
+      <button id="week-prev-btn" type="button" style="background:#F7F2EA; border:none; border-radius:8px; width:32px; height:32px; font-size:14px; color:#1E4D4A;">◀</button>
+      <span id="week-range-label" style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#2B2B26; min-width:120px; text-align:center;"></span>
+      <button id="week-next-btn" type="button" style="background:#F7F2EA; border:none; border-radius:8px; width:32px; height:32px; font-size:14px; color:#1E4D4A;">▶</button>
+    </div>
     <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px;">
       <div class="metric"><p class="metric-label" id="metric-label-1">Heute</p><p class="metric-value" id="metric-1">0</p></div>
-      <div class="metric"><p class="metric-label">Vorwoche (bisher vergleichbar)</p><p class="metric-value" id="metric-2">0</p></div>
+      <div class="metric"><p class="metric-label">Vorwoche</p><p class="metric-value" id="metric-2">0</p></div>
       <div class="metric"><p class="metric-label" id="metric-label-3">Ø pro Tag</p><p class="metric-value" id="metric-3">—</p></div>
     </div>
     <p style="font-size:12px; color:#8A7E70; font-weight:500; margin:0 0 10px;">Diese Woche im Verlauf</p>
     <div id="bar-chart" style="display:flex; align-items:flex-end; gap:10px; height:110px; margin-bottom:22px;"></div>
-    <p style="font-size:12px; color:#8A7E70; font-weight:500; margin:0 0 10px;">Verteilung nach Kategorie (gesamt)</p>
-    <div id="tag-stats"></div>
-    <p id="empty-state" style="font-size:13px; color:#8A7E70; text-align:center; padding:12px 0 0; margin:0; display:none;"></p>
+
+    <div id="week-entries-section" style="display:none;">
+      <p style="font-size:12px; color:#8A7E70; font-weight:500; margin:0 0 10px;" id="week-entries-label">Einträge dieser Woche</p>
+      <div id="week-entries-list"></div>
+    </div>
   </div>
 
   <div class="card" id="gallery-card" style="display:none;">
@@ -207,6 +216,11 @@
         <button id="lightbox-close" style="background:#1E4D4A; color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:13px; width:100%;">Schließen</button>
       </div>
     </div>
+  </div>
+
+  <div id="total-bar" style="position:fixed; left:0; right:0; bottom:0; background:#1E4D4A; color:#fff; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); display:flex; align-items:center; justify-content:center; gap:8px; z-index:500; box-shadow:0 -4px 14px rgba(0,0,0,0.15);">
+    <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:500;" id="total-bar-count">0</span>
+    <span style="font-size:12.5px; color:#D9CFC0;">gute Entscheidungen insgesamt</span>
   </div>
 </div>
 
@@ -250,9 +264,10 @@
     "Ich entscheide."
   ];
 
-  var state = { decisions: [], log: [], mantras: null, tags: null, selectedTag: null, view: "heute", selectedDate: null, pendingPhoto: null, photoCache: {} };
+  var state = { decisions: [], log: [], mantras: null, tags: null, selectedTag: null, view: "heute", weekOffset: 0, selectedDate: null, pendingPhoto: null, photoCache: {} };
   var pendingPhotoTargetEntryId = null;
   state.mantraEditMode = false;
+  state.todayEditMode = false;
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
   function todayISO(d) {
@@ -526,14 +541,17 @@
   function computeStats() {
     var today = new Date();
     var isoToday = todayISO(today);
-    var weekStart = startOfWeek(today);
+    var viewedWeekStart = addDays(startOfWeek(today), state.weekOffset * 7);
+    var viewedWeekEnd = addDays(viewedWeekStart, 6);
+    var weekStart = viewedWeekStart;
     var weekStartISO = todayISO(weekStart);
+    var weekEndISO = todayISO(viewedWeekEnd);
     var lastWeekStart = addDays(weekStart, -7);
     var lastWeekStartISO = todayISO(lastWeekStart);
     var lastWeekEndISO = todayISO(addDays(weekStart, -1));
 
     var todayEntries = state.log.filter(function (l) { return l.date === isoToday; });
-    var weekEntries = state.log.filter(function (l) { return l.date >= weekStartISO && l.date <= isoToday; });
+    var weekEntries = state.log.filter(function (l) { return l.date >= weekStartISO && l.date <= weekEndISO; });
     var lastWeekEntries = state.log.filter(function (l) { return l.date >= lastWeekStartISO && l.date <= lastWeekEndISO; });
 
     function byTag(entries) {
@@ -551,7 +569,7 @@
       var tagCounts = {};
       Object.keys(TAG_MAP).forEach(function (id) { tagCounts[id] = 0; });
       dayEntries.forEach(function (e) { tagCounts[e.tag] = (tagCounts[e.tag] || 0) + 1; });
-      return { label: label, count: dayEntries.length, tagCounts: tagCounts, isToday: iso === isoToday, isFuture: d > today };
+      return { label: label, dayNum: d.getDate(), count: dayEntries.length, tagCounts: tagCounts, isToday: iso === isoToday, isFuture: d > today };
     });
 
     var weekTotal = weekEntries.length;
@@ -570,7 +588,9 @@
     return {
       todayCount: todayEntries.length, weekTotal: weekTotal, lastWeekTotal: lastWeekTotal,
       avgPerDay: avgPerDay, avgPerWeek: avgPerWeek, totalCount: state.log.length, byTagToday: byTag(todayEntries),
-      byTagWeek: byTag(weekEntries), byTagAll: byTag(state.log), byDay: byDay
+      byTagWeek: byTag(weekEntries), byTagAll: byTag(state.log), byDay: byDay,
+      weekEntries: weekEntries,
+      viewedWeekStart: viewedWeekStart, viewedWeekEnd: viewedWeekEnd
     };
   }
 
@@ -602,6 +622,7 @@
       (stats.totalCount === 0 ? "Dein erster Eintrag wartet" : (stats.totalCount + " gute Entscheidungen insgesamt"));
     document.getElementById("storage-mode-info").textContent =
       "Speicher: " + (Store.mode === "claude" ? "Claude" : "IndexedDB (lokal)");
+    document.getElementById("total-bar-count").textContent = stats.totalCount;
     document.getElementById("ring").innerHTML = renderRing(stats.todayCount);
 
     var tagRow = document.getElementById("tag-row");
@@ -662,7 +683,7 @@
         '<div style="flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center;">' +
           '<div style="width:60%; height:' + totalHeight + '%; display:flex; flex-direction:column-reverse; border-radius:4px 4px 0 0; overflow:hidden;">' + segmentsHtml + '</div>' +
         '</div>' +
-        '<span style="font-size:11px; color:' + (d.isToday ? "#1E4D4A" : "#8A7E70") + '; font-weight:' + (d.isToday ? "600" : "400") + '; margin-top:6px;">' + d.label + '</span>' +
+        '<span style="font-size:11px; color:' + (d.isToday ? "#1E4D4A" : "#8A7E70") + '; font-weight:' + (d.isToday ? "600" : "400") + '; margin-top:6px;">' + d.label + ' ' + d.dayNum + '.</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace; font-size:10px;">' + (d.isFuture ? "" : d.count) + '</span>';
       barChart.appendChild(col);
     });
@@ -696,6 +717,23 @@
     document.getElementById("view-woche").style.background = state.view === "woche" ? "#fff" : "transparent";
     document.getElementById("view-woche").style.color = state.view === "woche" ? "#1E4D4A" : "#8A7E70";
 
+    var weekNav = document.getElementById("week-nav");
+    weekNav.style.display = state.view === "woche" ? "flex" : "none";
+    if (state.view === "woche") {
+      var wLabel;
+      if (state.weekOffset === 0) {
+        wLabel = "Diese Woche";
+      } else if (state.weekOffset === -1) {
+        wLabel = "Letzte Woche";
+      } else {
+        wLabel = stats.viewedWeekStart.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) +
+          " – " + stats.viewedWeekEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+      }
+      document.getElementById("week-range-label").textContent = wLabel;
+      document.getElementById("week-next-btn").disabled = state.weekOffset >= 0;
+      document.getElementById("week-next-btn").style.opacity = state.weekOffset >= 0 ? "0.3" : "1";
+    }
+
     var dateBanner = document.getElementById("date-banner");
     var iso = state.selectedDate || todayISO();
     if (iso !== todayISO()) {
@@ -706,16 +744,8 @@
       dateBanner.style.display = "none";
     }
 
-    var lastPreview = document.getElementById("last-entry-preview");
-    if (state.log.length === 0) {
-      lastPreview.textContent = "Noch kein Eintrag vorhanden.";
-    } else {
-      var lastEntry = state.log[state.log.length - 1];
-      var lastDecision = state.decisions.find(function (d) { return d.id === lastEntry.decisionId; });
-      lastPreview.textContent = "Zuletzt: \u201e" + (lastDecision ? lastDecision.text : "?") + "\u201c";
-    }
-
     renderTodayList(stats);
+    renderWeekEntriesList(stats);
     renderGallery();
     renderMantras();
   }
@@ -881,6 +911,57 @@
       var tag = TAG_MAP[entry.tag];
       var row = document.createElement("div");
       row.className = "today-item";
+
+      if (state.todayEditMode) {
+        var select = document.createElement("select");
+        select.style.cssText = "font-size:14px; padding:4px; border-radius:8px; border:1px solid #E8DCC8; background:#FCFDFA; flex-shrink:0;";
+        activeTags().forEach(function (t) {
+          var opt = document.createElement("option");
+          opt.value = t.id;
+          opt.textContent = t.icon + " " + t.label;
+          if (t.id === entry.tag) opt.selected = true;
+          select.appendChild(opt);
+        });
+        select.addEventListener("change", function () {
+          entry.tag = select.value;
+          persist();
+          render();
+        });
+        row.appendChild(select);
+
+        var input = document.createElement("input");
+        input.type = "text";
+        input.value = decision ? decision.text : "";
+        input.style.cssText = "flex:1; min-width:0; font-size:14px; padding:6px 8px; border-radius:8px; border:1px solid #E8DCC8; background:#FCFDFA;";
+        input.addEventListener("change", function () {
+          var val = input.value.trim();
+          if (val && decision) {
+            decision.text = val;
+            persist();
+            render();
+          } else {
+            input.value = decision ? decision.text : "";
+          }
+        });
+        row.appendChild(input);
+
+        var delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "tag-del-btn";
+        delBtn.textContent = "✕";
+        delBtn.title = "Eintrag löschen";
+        delBtn.addEventListener("click", function () {
+          deleteLogEntry(entry.id);
+          render();
+          persist();
+          setStatus("Eintrag gelöscht.", "ok");
+        });
+        row.appendChild(delBtn);
+
+        list.appendChild(row);
+        return;
+      }
+
       var time = new Date(entry.timestamp).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
       row.innerHTML =
         '<span class="dot" style="background:' + (tag ? tag.color : "#E8DCC8") + ';"></span>' +
@@ -906,6 +987,63 @@
       }
       list.appendChild(row);
     });
+  }
+
+  function renderWeekEntriesList(stats) {
+    var section = document.getElementById("week-entries-section");
+    if (state.view !== "woche") {
+      section.style.display = "none";
+      return;
+    }
+
+    var label = document.getElementById("week-entries-label");
+    if (state.weekOffset === 0) label.textContent = "Einträge dieser Woche";
+    else if (state.weekOffset === -1) label.textContent = "Einträge letzte Woche";
+    else label.textContent = "Einträge " +
+      stats.viewedWeekStart.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) +
+      " – " + stats.viewedWeekEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+
+    var list = document.getElementById("week-entries-list");
+    list.innerHTML = "";
+
+    if (stats.weekEntries.length === 0) {
+      section.style.display = "block";
+      var empty = document.createElement("p");
+      empty.style.cssText = "font-size:13px; color:#8A7E70; text-align:center; padding:8px 0; margin:0;";
+      empty.textContent = "Keine Einträge in diesem Zeitraum.";
+      list.appendChild(empty);
+      return;
+    }
+
+    section.style.display = "block";
+
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(stats.viewedWeekStart, i);
+      var iso = todayISO(d);
+      var dayEntries = stats.weekEntries
+        .filter(function (e) { return e.date === iso; })
+        .sort(function (a, b) { return a.timestamp < b.timestamp ? -1 : 1; });
+      if (dayEntries.length === 0) continue;
+
+      var dayHeading = document.createElement("p");
+      dayHeading.style.cssText = "font-size:11px; color:#8A7E70; font-weight:500; margin:14px 0 6px; text-transform:uppercase;";
+      dayHeading.textContent = d.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "2-digit" });
+      list.appendChild(dayHeading);
+
+      dayEntries.forEach(function (entry) {
+        var decision = state.decisions.find(function (dd) { return dd.id === entry.decisionId; });
+        var tag = TAG_MAP[entry.tag];
+        var row = document.createElement("div");
+        row.className = "today-item";
+        var time = new Date(entry.timestamp).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+        row.innerHTML =
+          '<span class="dot" style="background:' + (tag ? tag.color : "#E8DCC8") + ';"></span>' +
+          '<span class="txt">' + (tag ? tag.icon + " " : "") + escapeHtml(decision ? decision.text : "?") + '</span>' +
+          (entry.photoId ? '<span title="Mit Foto">📷</span>' : "") +
+          '<span class="time">' + time + '</span>';
+        list.appendChild(row);
+      });
+    }
   }
 
   function renderGallery() {
@@ -1096,18 +1234,11 @@
     box.style.display = "block";
   }
 
-  document.getElementById("view-heute").addEventListener("click", function () { state.view = "heute"; render(); });
+  document.getElementById("view-heute").addEventListener("click", function () { state.view = "heute"; state.weekOffset = 0; render(); });
   document.getElementById("view-woche").addEventListener("click", function () { state.view = "woche"; render(); });
-  document.getElementById("reset-btn").addEventListener("click", function () {
-    if (state.log.length === 0) {
-      setStatus("Es gibt noch keinen Eintrag zum Löschen.", "info");
-      return;
-    }
-    var lastEntry = state.log[state.log.length - 1];
-    var result = deleteLogEntry(lastEntry.id);
-    render();
-    persist();
-    setStatus("Letzter Eintrag gelöscht: \u201e" + (result && result.decision ? result.decision.text : lastEntry.tag) + "\u201c.", "ok");
+  document.getElementById("week-prev-btn").addEventListener("click", function () { state.weekOffset -= 1; render(); });
+  document.getElementById("week-next-btn").addEventListener("click", function () {
+    if (state.weekOffset < 0) { state.weekOffset += 1; render(); }
   });
 
   document.getElementById("date-input").addEventListener("change", function (e) {
@@ -1174,6 +1305,11 @@
     this.textContent = state.mantraEditMode ? "Fertig" : "Bearbeiten";
     document.getElementById("mantra-edit-tools").style.display = state.mantraEditMode ? "block" : "none";
     renderMantras();
+  });
+  document.getElementById("today-edit-toggle-btn").addEventListener("click", function () {
+    state.todayEditMode = !state.todayEditMode;
+    this.textContent = state.todayEditMode ? "Fertig" : "Bearbeiten";
+    render();
   });
   document.getElementById("mantra-reset-btn").addEventListener("click", function () {
     var btn = this;
