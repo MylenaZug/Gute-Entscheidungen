@@ -161,22 +161,16 @@
   </div>
 
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-      <h2>Auswertung</h2>
-      <div style="display:flex; background:#F7F2EA; border-radius:10px; padding:3px;">
-        <button id="view-heute" style="border:none; background:#fff; padding:6px 12px; font-size:12.5px; font-weight:500; border-radius:8px;">Heute</button>
-        <button id="view-woche" style="border:none; background:transparent; padding:6px 12px; font-size:12.5px; font-weight:500; border-radius:8px; color:#8A7E70;">Diese Woche</button>
-      </div>
-    </div>
-    <div id="week-nav" style="display:none; align-items:center; justify-content:center; gap:14px; margin:-4px 0 14px;">
+    <h2 style="margin-bottom:14px;">Auswertung</h2>
+    <div id="week-nav" style="display:flex; align-items:center; justify-content:center; gap:14px; margin:0 0 14px;">
       <button id="week-prev-btn" type="button" style="background:#F7F2EA; border:none; border-radius:8px; width:32px; height:32px; font-size:14px; color:#1E4D4A;">◀</button>
       <span id="week-range-label" style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#2B2B26; min-width:120px; text-align:center;"></span>
       <button id="week-next-btn" type="button" style="background:#F7F2EA; border:none; border-radius:8px; width:32px; height:32px; font-size:14px; color:#1E4D4A;">▶</button>
     </div>
     <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px;">
-      <div class="metric"><p class="metric-label" id="metric-label-1">Heute</p><p class="metric-value" id="metric-1">0</p></div>
-      <div class="metric"><p class="metric-label">Vorwoche</p><p class="metric-value" id="metric-2">0</p></div>
-      <div class="metric"><p class="metric-label" id="metric-label-3">Ø pro Tag</p><p class="metric-value" id="metric-3">—</p></div>
+      <div class="metric"><p class="metric-label">Heute</p><p class="metric-value" id="metric-1">0</p></div>
+      <div class="metric"><p class="metric-label" id="metric-label-2">Diese Woche</p><p class="metric-value" id="metric-2">0</p></div>
+      <div class="metric"><p class="metric-label">Ø pro Tag</p><p class="metric-value" id="metric-3">—</p></div>
     </div>
     <p style="font-size:12px; color:#8A7E70; font-weight:500; margin:0 0 10px;">Diese Woche im Verlauf</p>
     <div id="bar-chart" style="display:flex; align-items:flex-end; gap:10px; height:110px; margin-bottom:22px;"></div>
@@ -644,16 +638,12 @@
       tagRow.appendChild(btn);
     });
 
-    var activeByTag = state.view === "heute" ? stats.byTagToday : stats.byTagWeek;
-    var activeTotal = state.view === "heute" ? stats.todayCount : stats.weekTotal;
+    document.getElementById("metric-1").textContent = stats.todayCount;
+    document.getElementById("metric-label-2").textContent = state.weekOffset === 0 ? "Diese Woche" : "Woche";
+    document.getElementById("metric-2").textContent = stats.weekTotal;
 
-    document.getElementById("metric-label-1").textContent = state.view === "heute" ? "Heute" : "Diese Woche";
-    document.getElementById("metric-1").textContent = activeTotal;
-    document.getElementById("metric-2").textContent = stats.lastWeekTotal;
-
-    var avg = state.view === "heute" ? stats.avgPerDay : stats.avgPerWeek;
-    var current = state.view === "heute" ? stats.todayCount : stats.weekTotal;
-    document.getElementById("metric-label-3").textContent = state.view === "heute" ? "Ø pro Tag" : "Ø pro Woche";
+    var avg = stats.avgPerDay;
+    var current = stats.todayCount;
     var m3 = document.getElementById("metric-3");
     if (avg === null) {
       m3.textContent = "—";
@@ -705,34 +695,25 @@
       });
 
     var emptyState = document.getElementById("empty-state");
-    if (activeTotal === 0) {
+    if (stats.totalCount === 0) {
       emptyState.style.display = "block";
-      emptyState.textContent = state.view === "heute" ? "Noch keine Entscheidung heute — leg los, wenn du bereit bist." : "Diese Woche ist noch leer — jede Entscheidung zählt.";
+      emptyState.textContent = "Noch keine Entscheidung erfasst — leg los, wenn du bereit bist.";
     } else {
       emptyState.style.display = "none";
     }
 
-    document.getElementById("view-heute").style.background = state.view === "heute" ? "#fff" : "transparent";
-    document.getElementById("view-heute").style.color = state.view === "heute" ? "#1E4D4A" : "#8A7E70";
-    document.getElementById("view-woche").style.background = state.view === "woche" ? "#fff" : "transparent";
-    document.getElementById("view-woche").style.color = state.view === "woche" ? "#1E4D4A" : "#8A7E70";
-
-    var weekNav = document.getElementById("week-nav");
-    weekNav.style.display = state.view === "woche" ? "flex" : "none";
-    if (state.view === "woche") {
-      var wLabel;
-      if (state.weekOffset === 0) {
-        wLabel = "Diese Woche";
-      } else if (state.weekOffset === -1) {
-        wLabel = "Letzte Woche";
-      } else {
-        wLabel = stats.viewedWeekStart.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) +
-          " – " + stats.viewedWeekEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-      }
-      document.getElementById("week-range-label").textContent = wLabel;
-      document.getElementById("week-next-btn").disabled = state.weekOffset >= 0;
-      document.getElementById("week-next-btn").style.opacity = state.weekOffset >= 0 ? "0.3" : "1";
+    var wLabel;
+    if (state.weekOffset === 0) {
+      wLabel = "Diese Woche";
+    } else if (state.weekOffset === -1) {
+      wLabel = "Letzte Woche";
+    } else {
+      wLabel = stats.viewedWeekStart.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) +
+        " – " + stats.viewedWeekEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
     }
+    document.getElementById("week-range-label").textContent = wLabel;
+    document.getElementById("week-next-btn").disabled = state.weekOffset >= 0;
+    document.getElementById("week-next-btn").style.opacity = state.weekOffset >= 0 ? "0.3" : "1";
 
     var dateBanner = document.getElementById("date-banner");
     var iso = state.selectedDate || todayISO();
@@ -991,10 +972,6 @@
 
   function renderWeekEntriesList(stats) {
     var section = document.getElementById("week-entries-section");
-    if (state.view !== "woche") {
-      section.style.display = "none";
-      return;
-    }
 
     var label = document.getElementById("week-entries-label");
     if (state.weekOffset === 0) label.textContent = "Einträge dieser Woche";
@@ -1234,8 +1211,6 @@
     box.style.display = "block";
   }
 
-  document.getElementById("view-heute").addEventListener("click", function () { state.view = "heute"; state.weekOffset = 0; render(); });
-  document.getElementById("view-woche").addEventListener("click", function () { state.view = "woche"; render(); });
   document.getElementById("week-prev-btn").addEventListener("click", function () { state.weekOffset -= 1; render(); });
   document.getElementById("week-next-btn").addEventListener("click", function () {
     if (state.weekOffset < 0) { state.weekOffset += 1; render(); }
