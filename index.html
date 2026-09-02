@@ -1504,12 +1504,19 @@
         }
       }
 
-      var addedTags = 0;
+      var addedTags = 0, updatedTags = 0;
       if (Array.isArray(data.tags)) {
-        var existingTagIds = {};
-        state.tags.forEach(function (t) { existingTagIds[t.id] = true; });
         data.tags.forEach(function (t) {
-          if (t && t.id && !existingTagIds[t.id]) {
+          if (!t || !t.id) return;
+          var existing = state.tags.find(function (x) { return x.id === t.id; });
+          if (existing) {
+            var changed = existing.label !== t.label || existing.icon !== t.icon || existing.color !== t.color || existing.archived !== !!t.archived;
+            existing.label = t.label || existing.label;
+            existing.icon = t.icon || existing.icon;
+            existing.color = t.color || existing.color;
+            existing.archived = !!t.archived;
+            if (changed) updatedTags++;
+          } else {
             state.tags.push({
               id: t.id,
               label: t.label || "Tag",
@@ -1517,19 +1524,25 @@
               color: t.color || TAG_PALETTE[state.tags.length % TAG_PALETTE.length],
               archived: !!t.archived
             });
-            existingTagIds[t.id] = true;
             addedTags++;
           }
         });
         rebuildTagMap();
       }
 
-      var addedMantras = 0;
+      var addedMantras = 0, updatedMantras = 0;
       if (Array.isArray(data.mantras)) {
         var existingMantraTexts = state.mantras.map(function (m) { return m.text; });
         data.mantras.forEach(function (m) {
-          if (m && m.text && existingMantraTexts.indexOf(m.text) === -1) {
-            state.mantras.push({ id: uid(), text: m.text });
+          if (!m || !m.text) return;
+          var existingById = m.id ? state.mantras.find(function (x) { return x.id === m.id; }) : null;
+          if (existingById) {
+            if (existingById.text !== m.text) {
+              existingById.text = m.text;
+              updatedMantras++;
+            }
+          } else if (existingMantraTexts.indexOf(m.text) === -1) {
+            state.mantras.push({ id: m.id || uid(), text: m.text });
             existingMantraTexts.push(m.text);
             addedMantras++;
           }
@@ -1538,7 +1551,7 @@
 
       render();
       await persist();
-      setStatus("Import fertig: " + addedDecisions + " neue Entscheidungen, " + addedLog + " neue Verlaufseinträge, " + addedPhotos + " Fotos, " + addedMantras + " Merksätze, " + addedTags + " Tags.", "ok");
+      setStatus("Import fertig: " + addedDecisions + " neue Entscheidungen, " + addedLog + " neue Verlaufseinträge, " + addedPhotos + " Fotos, " + addedMantras + " neue/" + updatedMantras + " aktualisierte Merksätze, " + addedTags + " neue/" + updatedTags + " aktualisierte Tags.", "ok");
     } catch (err) {
       setStatus("Import fehlgeschlagen: " + err.message, "err");
     } finally {
