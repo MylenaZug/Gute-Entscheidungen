@@ -83,7 +83,7 @@
         </div>
         <button id="mantra-edit-toggle-btn" type="button" style="background:#fff; color:#1E4D4A; border:1px solid #E8DCC8; border-radius:10px; padding:7px 14px; font-size:12.5px; font-weight:500; flex-shrink:0; white-space:nowrap;">Bearbeiten</button>
       </div>
-      <div id="mantra-list" style="display:flex; flex-direction:column; overflow-y:auto; padding:6px 28px 20px 34px; position:relative;"></div>
+      <div id="mantra-list" style="display:flex; flex-direction:column; overflow-y:auto; min-height:0; flex:1; padding:6px 28px 20px 34px; position:relative;"></div>
       <div id="mantra-edit-tools" style="display:none; background:#fff;">
         <div style="display:flex; gap:8px; padding:14px 20px; border-top:1px solid #E8DCC8;">
           <input type="text" id="mantra-input" placeholder="Eigenen Merksatz hinzufügen …" style="flex:1; min-width:120px;" />
@@ -105,7 +105,7 @@
         <h2 style="margin:0 0 4px;">Tags bearbeiten</h2>
         <p style="font-size:12.5px; color:#8A7E70; margin:0 0 14px;">Name und Symbol frei anpassen — bis zu 9 Tags.</p>
       </div>
-      <div id="tags-edit-list" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding:0 20px 12px;"></div>
+      <div id="tags-edit-list" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; min-height:0; flex:1; padding:0 20px 12px;"></div>
       <div style="padding:0 20px 16px;">
         <button id="tags-add-btn" type="button" style="width:100%; background:#F7F2EA; color:#1E4D4A; border:1px dashed #E8DCC8; border-radius:10px; padding:10px; font-size:13px; font-weight:500;">+ Neuen Tag hinzufügen</button>
       </div>
@@ -179,6 +179,18 @@
     <div id="week-entries-section" style="display:none;">
       <p style="font-size:12px; color:#8A7E70; font-weight:500; margin:0 0 10px;" id="week-entries-label">Einträge dieser Woche</p>
       <div id="week-entries-list"></div>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h2 style="font-size:14px; margin:0 0 2px;">☕ Kaffee heute</h2>
+      <p style="font-size:12px; color:#8A7E70; margin:0;">Setzt sich morgen automatisch zurück.</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button id="coffee-minus-btn" type="button" style="width:36px; height:36px; border-radius:10px; border:1px solid #E8DCC8; background:#fff; font-size:16px; color:#1E4D4A;">–</button>
+      <span id="coffee-count" style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:500; min-width:20px; text-align:center;">0</span>
+      <button id="coffee-plus-btn" type="button" style="width:36px; height:36px; border-radius:10px; border:none; background:#1E4D4A; color:#fff; font-size:16px;">+</button>
     </div>
   </div>
 
@@ -276,6 +288,7 @@
   state.mantraEditMode = false;
   state.todayEditMode = false;
   state.showAllTagStats = false;
+  state.coffee = null;
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
   function todayISO(d) {
@@ -472,6 +485,7 @@
         state.log = parsed.log || [];
         state.mantras = parsed.mantras || null;
         state.tags = parsed.tags || null;
+        state.coffee = parsed.coffee || null;
       }
     } catch (e) {
       // Erststart, noch nichts gespeichert
@@ -491,6 +505,9 @@
     if (!state.selectedTag || !TAG_MAP[state.selectedTag]) {
       state.selectedTag = activeTags()[0].id;
     }
+    if (!state.coffee || state.coffee.date !== todayISO()) {
+      state.coffee = { date: todayISO(), count: 0 };
+    }
     render();
   }
 
@@ -500,7 +517,7 @@
       return;
     }
     try {
-      var result = await Store.set(STORAGE_KEY, JSON.stringify({ decisions: state.decisions, log: state.log, mantras: state.mantras, tags: state.tags }));
+      var result = await Store.set(STORAGE_KEY, JSON.stringify({ decisions: state.decisions, log: state.log, mantras: state.mantras, tags: state.tags, coffee: state.coffee }));
       if (result) {
         setStatus("Gespeichert.", "ok");
       } else {
@@ -625,6 +642,11 @@
 
   function render() {
     var stats = computeStats();
+    if (!state.coffee || state.coffee.date !== todayISO()) {
+      state.coffee = { date: todayISO(), count: 0 };
+      persist();
+    }
+    document.getElementById("coffee-count").textContent = state.coffee.count;
     document.getElementById("greeting").textContent = greetingText();
     document.getElementById("eyebrow").textContent =
       (stats.totalCount === 0 ? "Dein erster Eintrag wartet" : (stats.totalCount + " gute Entscheidungen insgesamt"));
@@ -1336,6 +1358,16 @@
   document.getElementById("tag-stats-toggle").addEventListener("click", function () {
     state.showAllTagStats = !state.showAllTagStats;
     render();
+  });
+  document.getElementById("coffee-plus-btn").addEventListener("click", function () {
+    state.coffee.count += 1;
+    document.getElementById("coffee-count").textContent = state.coffee.count;
+    persist();
+  });
+  document.getElementById("coffee-minus-btn").addEventListener("click", function () {
+    if (state.coffee.count > 0) state.coffee.count -= 1;
+    document.getElementById("coffee-count").textContent = state.coffee.count;
+    persist();
   });
   document.getElementById("mantra-reset-btn").addEventListener("click", function () {
     var btn = this;
