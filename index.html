@@ -157,6 +157,7 @@
     <h2>Verteilung nach Kategorie (gesamt)</h2>
     <p style="font-size:12.5px; color:#8A7E70; margin:0 0 12px;">Über alle deine Entscheidungen hinweg.</p>
     <div id="tag-stats"></div>
+    <button id="tag-stats-toggle" type="button" style="display:none; width:100%; background:none; border:none; color:#8A7E70; font-size:12px; text-decoration:underline; padding:4px 0 0;"></button>
     <p id="empty-state" style="font-size:13px; color:#8A7E70; text-align:center; padding:12px 0 0; margin:0; display:none;"></p>
   </div>
 
@@ -243,6 +244,18 @@
   function activeTags() {
     return state.tags.filter(function (t) { return !t.archived; });
   }
+  function moveActiveTag(tagId, direction) {
+    var active = activeTags();
+    var idxInActive = active.findIndex(function (x) { return x.id === tagId; });
+    var swapIdxInActive = idxInActive + direction;
+    if (swapIdxInActive < 0 || swapIdxInActive >= active.length) return;
+    var otherId = active[swapIdxInActive].id;
+    var realIdxA = state.tags.findIndex(function (x) { return x.id === tagId; });
+    var realIdxB = state.tags.findIndex(function (x) { return x.id === otherId; });
+    var tmp = state.tags[realIdxA];
+    state.tags[realIdxA] = state.tags[realIdxB];
+    state.tags[realIdxB] = tmp;
+  }
   var STORAGE_KEY = "gute-entscheidungen-data";
 
   var DEFAULT_MANTRAS = [
@@ -262,6 +275,7 @@
   var pendingPhotoTargetEntryId = null;
   state.mantraEditMode = false;
   state.todayEditMode = false;
+  state.showAllTagStats = false;
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
   function todayISO(d) {
@@ -621,12 +635,7 @@
 
     var tagRow = document.getElementById("tag-row");
     tagRow.innerHTML = "";
-    var tagUsageCounts = {};
-    state.log.forEach(function (l) { tagUsageCounts[l.tag] = (tagUsageCounts[l.tag] || 0) + 1; });
-    var sortedActiveTags = activeTags().sort(function (a, b) {
-      return (tagUsageCounts[b.id] || 0) - (tagUsageCounts[a.id] || 0);
-    });
-    sortedActiveTags.forEach(function (t) {
+    activeTags().forEach(function (t) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "tag-chip" + (state.selectedTag === t.id ? " active" : "");
@@ -680,9 +689,11 @@
 
     var tagStats = document.getElementById("tag-stats");
     tagStats.innerHTML = "";
-    state.tags
+    var sortedTagStats = state.tags
       .filter(function (t) { return !t.archived || (stats.byTagAll[t.id] || 0) > 0; })
-      .forEach(function (t) {
+      .sort(function (a, b) { return (stats.byTagAll[b.id] || 0) - (stats.byTagAll[a.id] || 0); });
+    var visibleTagStats = state.showAllTagStats ? sortedTagStats : sortedTagStats.slice(0, 5);
+    visibleTagStats.forEach(function (t) {
         var count = stats.byTagAll[t.id] || 0;
         var pct = stats.totalCount > 0 ? (count / stats.totalCount) * 100 : 0;
         var row = document.createElement("div");
@@ -693,6 +704,14 @@
           '<span style="font-family:\'IBM Plex Mono\',monospace; font-size:12px; color:#8A7E70; width:18px; text-align:right;">' + count + '</span>';
         tagStats.appendChild(row);
       });
+
+    var tagStatsToggle = document.getElementById("tag-stats-toggle");
+    if (sortedTagStats.length > 5) {
+      tagStatsToggle.style.display = "block";
+      tagStatsToggle.textContent = state.showAllTagStats ? "Nur Top 5 anzeigen" : "Alle anzeigen (" + sortedTagStats.length + ")";
+    } else {
+      tagStatsToggle.style.display = "none";
+    }
 
     var emptyState = document.getElementById("empty-state");
     if (stats.totalCount === 0) {
@@ -743,9 +762,37 @@
     var list = document.getElementById("tags-edit-list");
     list.innerHTML = "";
     var active = activeTags();
-    active.forEach(function (t) {
+    active.forEach(function (t, index) {
       var row = document.createElement("div");
       row.className = "tag-edit-row";
+
+      var moveBox = document.createElement("div");
+      moveBox.style.cssText = "display:flex; flex-direction:column; flex-shrink:0;";
+      var upBtn = document.createElement("button");
+      upBtn.type = "button";
+      upBtn.className = "mantra-move";
+      upBtn.textContent = "▲";
+      upBtn.disabled = index === 0;
+      upBtn.title = "Nach oben verschieben";
+      upBtn.addEventListener("click", function () {
+        moveActiveTag(t.id, -1);
+        renderTagsEditList();
+        persist();
+      });
+      var downBtn = document.createElement("button");
+      downBtn.type = "button";
+      downBtn.className = "mantra-move";
+      downBtn.textContent = "▼";
+      downBtn.disabled = index === active.length - 1;
+      downBtn.title = "Nach unten verschieben";
+      downBtn.addEventListener("click", function () {
+        moveActiveTag(t.id, 1);
+        renderTagsEditList();
+        persist();
+      });
+      moveBox.appendChild(upBtn);
+      moveBox.appendChild(downBtn);
+      row.appendChild(moveBox);
 
       var select = document.createElement("select");
       select.innerHTML = buildEmojiSelectHTML(t.icon);
@@ -1284,6 +1331,10 @@
   document.getElementById("today-edit-toggle-btn").addEventListener("click", function () {
     state.todayEditMode = !state.todayEditMode;
     this.textContent = state.todayEditMode ? "Fertig" : "Bearbeiten";
+    render();
+  });
+  document.getElementById("tag-stats-toggle").addEventListener("click", function () {
+    state.showAllTagStats = !state.showAllTagStats;
     render();
   });
   document.getElementById("mantra-reset-btn").addEventListener("click", function () {
